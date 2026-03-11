@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>How it works — CrewKit</title>
+  <link rel="stylesheet" href="typography-tokens.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body data-page="how-it-works">
+
+  <header class="app-header" id="app-header"></header>
+
+  <main class="app-main" style="max-width:760px">
+    <div class="page-header">
+      <a href="index.html" class="page-header__back">← Dashboard</a>
+      <h1 class="page-header__title">How it works</h1>
+      <p class="page-header__sub">The rationale behind CrewKit and how to develop it further.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__title">The Core Idea</div>
+      <p>CrewKit is built on a simple principle: <strong>define once, use everywhere</strong>. It's a single source of truth for your team structure and evaluation criteria.</p>
+      <p>Everything lives in a single <code>setup.json</code> file that you own, control, and can share selectively. No backend, no accounts, no data leaving your machine. Just you, your team, and the data you choose to keep.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__title">Your setup.json: The Foundation</div>
+      <p>Think of <code>setup.json</code> as your team's operating manual. It contains everything:</p>
+      <ul style="padding-left:20px;line-height:2">
+        <li>Your company configuration and team members</li>
+        <li>Skill matrices and evaluation templates</li>
+        <li>Assessment criteria and scoring grids</li>
+        <li>Your team member data and progress</li>
+      </ul>
+      <p>When you load it into the app, everything is restored exactly as you left it.</p>
+      <p><strong>Keep a backup.</strong> Download your <code>setup.json</code> regularly using the button in the header. The app saves to your browser's localStorage, which persists as long as you don't clear your data—but why risk it?</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__title">Getting Started: Module Build Order</div>
+      <p>Start with the foundation. Everything else depends on it.</p>
+      <p><strong>1. Artifacts First</strong> Create your evaluation templates. Skill matrices, scoring grids, questionnaires—these define your assessment criteria and structure. Think of artifacts as the rules of the game. Build them once, reuse them everywhere.</p>
+      <p><strong>2. Then Add Crew Members</strong> Bring your team into the system. Evaluate each person against the artifacts you created. Track skills, proficiency levels, and progress over time. This is where your team's growth becomes visible.</p>
+      <p><strong>3. Finally, Organize Initiatives</strong> Group your projects, goals, and team efforts. Track updates and ownership.</p>
+      <p>Follow this order and you'll have a solid foundation for everything that comes next.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__title">Share Individual Components</div>
+      <p>You don't always need to share the entire system. CrewKit lets you share specific pieces:</p>
+      <ul style="padding-left:20px;line-height:2">
+        <li><strong>Artifacts alone:</strong> Send a skill matrix or questionnaire to a colleague. They can evaluate themselves or others without needing your full setup.json.</li>
+        <li><strong>Crew profiles:</strong> Download individual team member profiles and share results privately.</li>
+        <li><strong>The full setup.json:</strong> Back up everything or hand off the entire system to another account.</li>
+      </ul>
+      <p>Each file is self-contained. Load any of them into another CrewKit instance and they work independently.</p>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <div class="card__title">Fill Out Mode: Lightweight Sharing</div>
+      <p>Sometimes your team members just need to fill out an evaluation—they don't need the entire app.</p>
+      <p>They can upload a standalone artifact file and fill it out. Let them complete the evaluation without needing <code>setup.json</code>. They download their results as a separate file to share back with you. Simple, no friction, no onboarding.</p>
+    </div>
+
+    <div class="card">
+      <div class="card__title">Extending CrewKit</div>
+      <p>CrewKit is open source and built with vanilla JavaScript. No build tools, no dependencies—just HTML, CSS, and JavaScript you can read and modify directly.</p>
+      <p><strong>Fork it, experiment with it, make it yours.</strong></p>
+      <p>If you build something cool the door is open:</p>
+      <ul style="padding-left:20px;line-height:2">
+        <li><strong>Repository:</strong> <a href="https://github.com/maxim-kich/crewkit" target="_blank">github.com/maxim-kich/crewkit</a></li>
+        <li>Create a pull request and share your ideas</li>
+        <li>Open an issue to discuss potential improvements</li>
+        <li>Write directly to the author with suggestions and feedback</li>
+      </ul>
+      <p>CrewKit is meant to evolve with the needs of design teams. Your contributions are welcome.</p>
+    </div>
+  </main>
+
+  <footer class="app-footer" id="app-footer"></footer>
+  <div id="toast-container"></div>
+
+  <script src="validator.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

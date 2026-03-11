@@ -1,0 +1,24 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backups
+*.bak
+*.backup
+*~
+
+# Node (if ever needed)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Local development
+.env.local
+.env.*.local

@@ -1,0 +1,2687 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrewKit</title>
+  <link rel="stylesheet" href="typography-tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .tip-bar {
+      width: 100%;
+      background: var(--color-surface-alt);
+      border-top: 1px solid var(--color-border);
+      color: var(--color-text-muted);
+      font-size: .8rem;
+      text-align: center;
+      padding: 10px 24px;
+    }
+
+    /* ── Dashboard tabs row ── */
+    .dash-tabs-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 32px;
+    }
+    .dash-tabs {
+      display: flex;
+      gap: 0;
+    }
+    .dash-tab {
+      position: relative;
+      padding: 10px 20px;
+      font-size: .9rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color .15s, border-color .15s;
+    }
+    .dash-tab:hover { color: var(--color-text); }
+    .dash-tab--active {
+      color: var(--color-accent);
+      border-bottom-color: var(--color-accent);
+    }
+
+    /* ── Notification dot on tab ── */
+    .dash-tab__dot {
+      position: absolute;
+      top: 8px;
+      right: 6px;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #e53e3e;
+      display: none;
+    }
+    .dash-tab--notify .dash-tab__dot { display: block; }
+
+    /* ── Tab actions (right side of tab row) ── */
+    .dash-tab-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-bottom: 10px;
+    }
+    .dash-tab-count {
+      font-size: .78rem;
+      color: var(--color-text-muted);
+    }
+    .dash-tab-divider {
+      width: 1px;
+      height: 16px;
+      background: var(--color-border);
+    }
+
+    /* ── Dropdown button ── */
+    .dash-dropdown {
+      position: relative;
+      display: inline-block;
+    }
+    .dash-dropdown__menu {
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 0;
+      min-width: 180px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,.1);
+      z-index: 200;
+      overflow: hidden;
+      display: none;
+      padding: 4px 0;
+    }
+    .dash-dropdown__menu--open { display: block; }
+    .dash-dropdown__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 9px 14px;
+      font-size: .875rem;
+      font-weight: 400;
+      background: none;
+      border: none;
+      text-align: left;
+      cursor: pointer;
+      color: var(--color-text);
+      transition: background .12s;
+      white-space: nowrap;
+    }
+    .dash-dropdown__item:hover { background: var(--color-surface-alt); }
+    .dash-dropdown__item--muted {
+      color: var(--color-text-muted);
+      cursor: default;
+    }
+    .dash-dropdown__item--muted:hover { background: none; }
+    .dash-dropdown__item .item-badge {
+      margin-left: auto;
+      font-size: .68rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 4px;
+      padding: 1px 5px;
+      letter-spacing: .03em;
+    }
+    .dash-dropdown__divider {
+      height: 1px;
+      background: var(--color-border);
+      margin: 4px 0;
+    }
+    .dash-dropdown__caret {
+      font-size: .85rem;
+      margin-left: 4px;
+      opacity: .7;
+    }
+
+    /* ── Tab panels ── */
+    .dash-panel { display: none; }
+    .dash-panel--active { display: block; }
+
+    /* ── New-item glow animation ── */
+    @keyframes newItemGlow {
+      0%   { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+      20%  { box-shadow: 0 0 0 6px rgba(99, 102, 241, .35); }
+      50%  { box-shadow: 0 0 0 3px rgba(99, 102, 241, .2); }
+      75%  { box-shadow: 0 0 0 6px rgba(99, 102, 241, .35); }
+      100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); }
+    }
+    .module-card--new {
+      animation: newItemGlow 2s ease forwards;
+    }
+
+    /* ── Global drag-drop overlay ── */
+    #global-dropzone {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      background: rgba(var(--color-accent-rgb, 99, 102, 241), .08);
+      backdrop-filter: blur(2px);
+      border: 3px dashed var(--color-accent, #6366f1);
+      pointer-events: none;
+      transition: opacity .15s;
+    }
+    #global-dropzone.active {
+      display: flex;
+      pointer-events: all;
+    }
+    .global-dropzone__icon {
+      font-size: 3rem;
+      line-height: 1;
+    }
+    .global-dropzone__label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--color-accent, #6366f1);
+    }
+    .global-dropzone__sub {
+      font-size: .82rem;
+      color: var(--color-text-muted);
+    }
+
+    /* ── Kanban board ──────────────────────────────────────────────────────── */
+    .kanban-board {
+      display: flex;
+      flex-wrap: nowrap;
+      gap: 16px;
+      overflow-x: auto;
+      padding-bottom: 16px;
+    }
+
+    .kanban-column {
+      background: var(--color-surface-alt);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      min-height: 400px;
+      flex-shrink: 0;
+      width: 300px;
+    }
+
+    .kanban-column__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .kanban-column__title {
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--color-text);
+      border: none;
+      background: transparent;
+      padding: 0;
+      cursor: pointer;
+      flex: 1;
+      font-family: inherit;
+    }
+
+    .kanban-column__title:focus {
+      outline: none;
+      border-bottom: 2px solid var(--color-accent);
+      padding-bottom: 0;
+      background: var(--color-surface-alt);
+      padding-left: 4px;
+      padding-right: 4px;
+    }
+
+    .kanban-column__delete {
+      opacity: 0;
+      transition: opacity .15s;
+      flex-shrink: 0;
+    }
+
+    .kanban-column__header:hover .kanban-column__delete {
+      opacity: 1;
+    }
+
+    .kanban-column--add {
+      background: none;
+      padding: 0;
+      min-height: auto;
+      width: auto;
+      flex-shrink: 0;
+    }
+
+    .kanban-add-column-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: .8rem;
+      transition: background .12s, color .12s, border-color .12s;
+      line-height: 1;
+    }
+
+    .kanban-add-column-btn:hover {
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      border-color: var(--color-text-muted);
+    }
+
+    .kanban-add-column-btn__icon {
+      font-size: inherit;
+    }
+
+    .kanban-add-column-btn__text {
+      display: none;
+    }
+
+    .kanban-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+      min-height: 100px;
+    }
+
+    .kanban-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 12px;
+      cursor: move;
+      transition: all .15s;
+      user-select: none;
+      position: relative;
+    }
+
+    .kanban-card:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transform: translateY(-2px);
+    }
+
+    .kanban-card.dragging {
+      opacity: 0.5;
+    }
+
+    .kanban-card__content {
+      padding-right: 36px;
+    }
+
+    .kanban-card__title {
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--color-text);
+      margin-bottom: 4px;
+      word-break: break-word;
+    }
+
+    .kanban-card__date {
+      font-size: .75rem;
+      color: var(--color-text-muted);
+    }
+
+    .kanban-card__delete {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+
+    .kanban-card:hover .kanban-card__delete {
+      opacity: 1;
+    }
+
+    .kanban-add-btn {
+      align-self: flex-start;
+      margin-top: 12px;
+    }
+
+    /* ── Modal ─────────────────────────────────────────────────────────────── */
+    .initiative-modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+    }
+
+    .initiative-modal-backdrop.active {
+      display: flex;
+    }
+
+    .initiative-modal {
+      background: var(--color-surface);
+      border-radius: var(--radius-lg);
+      padding: 32px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .initiative-modal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .initiative-modal__title {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+
+    .initiative-modal__close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--color-text-muted);
+      transition: color .15s;
+    }
+
+    .initiative-modal__close:hover {
+      color: var(--color-text);
+    }
+
+    .initiative-modal-field {
+      margin-bottom: 20px;
+    }
+
+    .initiative-modal-field label {
+      display: block;
+      font-weight: 600;
+      font-size: .9rem;
+      margin-bottom: 6px;
+      color: var(--color-text);
+    }
+
+    .initiative-modal-field input,
+    .initiative-modal-field textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: .9rem;
+    }
+
+    .initiative-modal-field textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .initiative-modal-field input:focus,
+    .initiative-modal-field textarea:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(var(--color-accent-rgb, 39, 65, 51), .1);
+    }
+
+    .initiative-modal-view {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .initiative-modal-view__field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .initiative-modal-view__label {
+      font-weight: 600;
+      font-size: .9rem;
+      color: var(--color-text);
+    }
+
+    .initiative-modal-view__text {
+      font-size: .9rem;
+      color: var(--color-text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .initiative-updates {
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .initiative-updates__title {
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .initiative-update-item {
+      background: var(--color-surface-alt);
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      font-size: .85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .initiative-update-item__content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .initiative-update-item__date {
+      color: var(--color-text-muted);
+      font-size: .75rem;
+      margin-top: 6px;
+    }
+
+    .initiative-update-item__text {
+      color: var(--color-text);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .initiative-update-item__actions {
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity .15s;
+      flex-shrink: 0;
+    }
+
+    .initiative-update-item:hover .initiative-update-item__actions {
+      opacity: 1;
+    }
+
+    .initiative-add-update-card {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 20px;
+      margin-top: 0;
+    }
+
+    .initiative-add-update-card__textarea {
+      flex: 1;
+      font-size: .85rem;
+      padding: 6px 10px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-family: inherit;
+      min-height: 32px;
+      max-height: 32px;
+      resize: none;
+      overflow: hidden;
+    }
+
+    .initiative-add-update-card__date {
+      font-size: .85rem;
+      padding: 6px 8px;
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-family: inherit;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .initiative-add-update-card button {
+      flex-shrink: 0;
+    }
+
+    .initiative-modal__actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    .initiative-modal__actions-left {
+      display: flex;
+      gap: 8px;
+    }
+
+    .initiative-modal__actions-right {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ── Task Mode (no setup.json) ────────────────────────────────────────── */
+    .task-mode {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .task-dropzone {
+      width: 100%;
+      max-width: 600px;
+      min-height: 300px;
+      border: 2px dashed var(--color-border);
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      background: var(--color-surface-alt);
+      padding: 40px 24px;
+    }
+
+    .task-dropzone:hover {
+      border-color: var(--color-accent);
+      background: var(--color-surface);
+    }
+
+    .task-dropzone.dragover {
+      border-color: var(--color-accent);
+      background: var(--color-accent-subtle);
+    }
+
+    .task-dropzone__icon {
+      font-size: 3rem;
+    }
+
+    .task-dropzone__text {
+      font-size: 1rem;
+      color: var(--color-text);
+      text-align: center;
+    }
+
+    .task-dropzone__sub {
+      font-size: .85rem;
+      color: var(--color-text-muted);
+    }
+
+    .task-artifact-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .task-artifact-header {
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .task-artifact-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin: 0;
+    }
+
+    .task-artifact-desc {
+      font-size: .9rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .task-toolbar {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      padding-top: 16px;
+      border-top: 1px solid var(--color-border);
+      margin-top: 16px;
+    }
+
+    /* ── Questionnaire view mode fields ── */
+    .q-view-fields-card {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .q-view-field {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .q-view-field__label {
+      font-weight: 600;
+      font-size: .9375rem;
+      color: var(--color-text);
+    }
+
+    .q-view-field__input {
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: .9375rem;
+      color: var(--color-text);
+      background: var(--color-surface);
+      transition: border-color .15s;
+    }
+
+    .q-view-field__input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(72, 118, 94, .1);
+    }
+
+    .q-view-field__textarea {
+      padding: 10px 12px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      font-size: .9375rem;
+      color: var(--color-text);
+      background: var(--color-surface);
+      transition: border-color .15s;
+      font-family: inherit;
+      resize: vertical;
+      min-height: 120px;
+    }
+
+    .q-view-field__textarea:focus {
+      outline: none;
+      border-color: var(--color-accent);
+      box-shadow: 0 0 0 3px rgba(72, 118, 94, .1);
+    }
+
+    .q-view-field__type-badge {
+      font-size: .85rem;
+      font-weight: 400;
+      color: var(--color-text-muted);
+    }
+
+    .q-view-fields-card > .q-view-field:not(:last-child)::after {
+      content: '';
+      display: block;
+      height: 1px;
+      background: var(--color-border);
+      margin-top: 24px;
+    }
+
+    /* Select/Multiselect as tags */
+    .q-view-field__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .q-view-field__tag {
+      padding: 8px 12px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all .15s;
+      font-size: .9375rem;
+      color: var(--color-text);
+    }
+
+    .q-view-field__tag:hover {
+      border-color: var(--color-accent);
+      background: rgba(72, 118, 94, .05);
+    }
+
+    .q-view-field__tag--selected {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: white;
+    }
+
+    .q-view-field__tag--selected:hover {
+      background: var(--color-accent-hover);
+      border-color: var(--color-accent-hover);
+    }
+
+    /* Rate field with stars */
+    .q-view-field__rate {
+      display: flex;
+      gap: 8px;
+    }
+
+    .q-view-field__rate-btn {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: all .15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .q-view-field__rate-btn:hover {
+      border-color: var(--color-accent);
+      background: rgba(72, 118, 94, .05);
+    }
+
+    .q-view-field__rate-btn--selected {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+
+    .q-view-field__rate-btn--selected:hover {
+      background: var(--color-accent-hover);
+    }
+
+    /* ── Matrix layout (from artifact-builder) ──────────────────────────────── */
+    .matrix-wrap {
+      overflow-x: auto;
+    }
+
+    .matrix-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 600px;
+      font-size: .8375rem;
+    }
+
+    .matrix-table thead th {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      padding: 0;
+      vertical-align: middle;
+      min-width: 80px;
+      width: 80px;
+    }
+    .matrix-table thead th.th-label-col {
+      min-width: 300px;
+      width: 300px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .matrix-table thead th.th-right-pole {
+      min-width: 200px;
+      width: 200px;
+    }
+
+    .col-head {
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .col-head__label {
+      font-weight: 600;
+      color: var(--color-text);
+      background: none;
+      border: none;
+      border-bottom: 1px solid transparent;
+      width: 100%;
+      font-size: .8375rem;
+      outline: none;
+      padding: 2px 0;
+      text-align: center;
+    }
+    .col-head__label:focus { border-bottom-color: var(--color-accent); }
+
+    .group-header-row td.group-cell {
+      background: var(--color-surface-alt);
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      border-left: none;
+      border-right: none;
+      padding: 8px 10px;
+    }
+    .group-header-row:first-child td.group-cell { border-top: none; }
+
+    .group-header-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .group-label-input {
+      background: none; border: none;
+      font-weight: 600; font-size: .8125rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .04em;
+      outline: none; flex: 1;
+      padding: 2px 0;
+      border-bottom: 1px solid transparent;
+    }
+
+    .matrix-table tbody tr.skill-row td:not(.td-handle):not(.td-action) {
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .row-label-cell {
+      border: 1px solid var(--color-border);
+      padding: 8px 10px;
+      vertical-align: top;
+      background: var(--color-surface);
+      width: 300px;
+      max-width: 300px;
+    }
+    .row-label__name {
+      font-weight: 500; background: none; border: none;
+      border-bottom: 1px solid transparent;
+      width: 100%; font-size: .8375rem; outline: none;
+      padding: 2px 0; color: var(--color-text); display: block;
+    }
+
+    .matrix-cell {
+      border: 1px solid var(--color-border);
+      padding: 0; text-align: center; vertical-align: middle;
+      cursor: pointer; transition: background .12s; user-select: none;
+    }
+    .matrix-cell--filled-score     { background: var(--color-accent-subtle); }
+    .matrix-cell--filled-selective { background: var(--color-accent); }
+    .matrix-cell--readonly         { }
+    .matrix-cell__dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--color-accent); margin: 0 auto; display: none;
+    }
+    .matrix-cell--filled-selective .matrix-cell__dot { display: block; }
+    .matrix-cell--scale-neg.matrix-cell--filled-score { background: #DBEAFE; }
+    .matrix-cell--scale-pos.matrix-cell--filled-score { background: var(--color-accent-subtle); }
+
+    .row-right-pole-cell {
+      width: 200px;
+      max-width: 200px;
+    }
+
+    .row-desc-toggle {
+      background: none; border: none;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: .72rem;
+      padding: 0; margin-top: 3px;
+      text-decoration: underline;
+      display: block;
+    }
+    .row-desc-toggle:hover { color: var(--color-text); }
+
+    .row-desc-text {
+      display: none;
+      font-size: .75rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .row-desc-text.show { display: block; }
+  </style>
+</head>
+<body data-page="dashboard">
+
+  <header class="app-header" id="app-header"></header>
+
+  <main class="app-main" id="app-main">
+    <!-- Rendered by Pages.dashboard.init() -->
+  </main>
+
+  <div class="tip-bar" id="tip-bar" style="display:none">
+    Tip: Don't forget to download your setup.json after making changes. You may lose your progress if you clear your browser cache.
+  </div>
+
+  <footer class="app-footer" id="app-footer"></footer>
+
+  <div id="toast-container"></div>
+
+  <!-- Hidden import file input (multi-select) -->
+  <input type="file" id="import-file-input" accept=".json" multiple style="display:none">
+
+  <!-- Global drag-drop overlay -->
+  <div id="global-dropzone">
+    <div class="global-dropzone__icon">📂</div>
+    <div class="global-dropzone__label">Drop to import</div>
+    <div class="global-dropzone__sub">Artifacts, crew members, or candidate profiles</div>
+  </div>
+
+  <script src="validator.js"></script>
+  <script src="app.js"></script>
+  <script>
+    Pages.dashboard = {
+      _activeTab: 'artifacts',
+      // Track IDs of newly imported items per tab so we can highlight them
+      _newItems: { artifacts: new Set(), crew: new Set(), initiatives: new Set() },
+      // Track which tabs have unseen new items (notification dots)
+      _notifyTabs: new Set(),
+
+      init() {
+        const main  = document.getElementById('app-main');
+        const setup = App.setup;
+        const searchParams = new URLSearchParams(location.search);
+
+        // If task=fillout parameter is set, show tasks fill interface
+        if (searchParams.get('task') === 'fillout') {
+          if (Pages.tasks) Pages.tasks.init();
+          return;
+        }
+
+        // If fillout parameter is set, show drop zone even if setup exists
+        if (searchParams.get('fillout') === '1') {
+          this._renderEmpty(main);
+          return;
+        }
+
+        if (!setup) {
+          this._renderEmpty(main);
+          return;
+        }
+
+        const result = Validator.validateSetup(setup);
+        if (!result.valid) {
+          this._renderError(main, result);
+          return;
+        }
+
+        this._renderDashboard(main, setup);
+
+        if (searchParams.get('new') === '1') {
+          history.replaceState(null, '', 'index.html');
+          Toast.show('🎉 You successfully created your environment.', 'success', 5000);
+        }
+
+        // Restore the tab the user came from (e.g. ?from=crew or ?from=artifacts)
+        const fromTab = searchParams.get('from');
+        if (fromTab && ['artifacts', 'crew', 'initiatives'].includes(fromTab)) {
+          this._switchTab(fromTab);
+          history.replaceState(null, '', 'index.html');
+        } else {
+          // Restore the last active tab from localStorage
+          const savedTab = localStorage.getItem('crewkit_active_tab');
+          if (savedTab && ['artifacts', 'crew', 'initiatives'].includes(savedTab)) {
+            this._switchTab(savedTab);
+          }
+        }
+
+        // Wire up the import file input
+        document.getElementById('import-file-input').addEventListener('change', e => {
+          const files = Array.from(e.target.files || []);
+          if (files.length) Pages.dashboard._importFiles(files);
+          e.target.value = ''; // reset so same file can be re-selected
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', e => {
+          if (!e.target.closest('.dash-dropdown')) {
+            Pages.dashboard._closeDropdown();
+          }
+        });
+
+        // Global drag-drop import overlay
+        this._initGlobalDrop();
+      },
+
+      // ── Dropdown ────────────────────────────────────────────────────────────
+
+      _toggleDropdown() {
+        const menu = document.getElementById('dash-dropdown-menu');
+        if (!menu) return;
+        menu.classList.toggle('dash-dropdown__menu--open');
+      },
+
+      _closeDropdown() {
+        const menu = document.getElementById('dash-dropdown-menu');
+        if (menu) menu.classList.remove('dash-dropdown__menu--open');
+      },
+
+      // ── Render helpers ───────────────────────────────────────────────────────
+
+      _renderEmpty(main) {
+        main.innerHTML = `
+          <div class="dashboard-hero">
+            <div class="dashboard-hero__eyebrow">Welcome to</div>
+            <h1 class="dashboard-hero__title">Crew<span>Kit</span></h1>
+            <p class="dashboard-hero__subtitle">Your local team development tool.</p>
+
+            <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+              <div class="dropzone__icon">📂</div>
+              <div class="dropzone__title">Drop your setup.json or artifact.json here</div>
+              <div class="dropzone__sub">or <a href="#" onclick="event.stopPropagation();document.getElementById('file-input').click()">browse for file</a></div>
+              <input type="file" id="file-input" class="dropzone__input" accept=".json">
+            </div>
+
+            <div class="dashboard-no-setup">
+              No setup.json yet? <a href="wizard.html">Let's start with setting up</a>
+            </div>
+          </div>`;
+
+        this._initDropzone();
+      },
+
+      _initDropzone() {
+        const zone = document.getElementById('dropzone');
+        const input = document.getElementById('file-input');
+        if (!zone || !input) return;
+
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', e => {
+          e.preventDefault();
+          zone.classList.remove('dragover');
+          const file = e.dataTransfer?.files?.[0];
+          if (file) this._handleFile(file);
+        });
+        input.addEventListener('change', e => {
+          if (e.target.files?.[0]) this._handleFile(e.target.files[0]);
+        });
+      },
+
+      _renderError(main, result) {
+        const errors   = result.errors.map(e => `
+          <li>
+            <span class="error-badge error-badge--l1">L1</span>
+            <span>${Utils.esc(e.msg)}</span>
+          </li>`).join('');
+        const warnings = result.warnings.map(w => `
+          <li>
+            <span class="error-badge error-badge--l2">L2</span>
+            <span>${Utils.esc(w.msg)}</span>
+          </li>`).join('');
+
+        main.innerHTML = `
+          <div class="error-screen">
+            <div class="error-screen__icon">⚠️</div>
+            <h2 class="error-screen__title">setup.json could not be loaded</h2>
+            <p class="error-screen__sub">Fix the issues below and reload the file.</p>
+            <ul class="error-screen__list">${errors}${warnings}</ul>
+            <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+              <button class="btn btn--primary" onclick="document.getElementById('file-input-err').click()">
+                Try another file
+              </button>
+              <button class="btn btn--secondary" onclick="App.clearStorage();location.reload()">
+                Clear &amp; start over
+              </button>
+              <a href="wizard.html" class="btn btn--ghost">Create new setup.json</a>
+            </div>
+            <input type="file" id="file-input-err" style="display:none" accept=".json">
+          </div>`;
+
+        document.getElementById('file-input-err').addEventListener('change', e => {
+          Pages.dashboard._handleFile(e.target.files[0]);
+        });
+      },
+
+      _renderDashboard(main, setup) {
+        const artifacts  = setup.artifacts  || [];
+        const crewMembers = setup.crewMembers || [];
+        const initiatives = setup.initiatives || {};
+        const columnOrder = initiatives.columnOrder || ['todo'];
+        let initiativesCount = 0;
+        for (const col of columnOrder) {
+          initiativesCount += (initiatives[col] || []).length;
+        }
+
+        main.innerHTML = `
+          <div class="dashboard-hero" style="padding-bottom:24px">
+            <h1 class="dashboard-hero__title" style="color:var(--color-text)">
+              Welcome back, ${Utils.esc(setup.user?.name || 'there')}!
+            </h1>
+          </div>
+
+          <div class="dash-tabs-row">
+            <div class="dash-tabs">
+              <button class="dash-tab dash-tab--active" data-tab="artifacts" onclick="Pages.dashboard._switchTab('artifacts')">
+                Artifacts<span class="dash-tab__dot"></span>
+              </button>
+              <button class="dash-tab" data-tab="crew" onclick="Pages.dashboard._switchTab('crew')">
+                Crew<span class="dash-tab__dot"></span>
+              </button>
+              <button class="dash-tab" data-tab="initiatives" onclick="Pages.dashboard._switchTab('initiatives')">
+                Initiatives<span class="dash-tab__dot"></span>
+              </button>
+            </div>
+            <div class="dash-tab-actions" id="dash-tab-actions">
+              <span class="dash-tab-count" id="dash-tab-count"></span>
+              <div class="dash-tab-divider"></div>
+              <div class="dash-dropdown">
+                <button class="btn btn--primary btn--sm" onclick="Pages.dashboard._toggleDropdown()">
+                  New <span class="dash-dropdown__caret">▾</span>
+                </button>
+                <div class="dash-dropdown__menu" id="dash-dropdown-menu">
+                  <button class="dash-dropdown__item" onclick="Pages.dashboard._closeDropdown();Pages.dashboard._create('artifacts')">
+                    Artifact
+                  </button>
+                  <button class="dash-dropdown__item" onclick="Pages.dashboard._closeDropdown();Pages.dashboard._create('crew')">
+                    Crew member
+                  </button>
+                  <div class="dash-dropdown__divider"></div>
+                  <button class="dash-dropdown__item" onclick="Pages.dashboard._closeDropdown();Pages.dashboard._openImport()">
+                    Import
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="dash-panel dash-panel--active" data-tab="artifacts">
+            ${this._renderTabContent('artifacts', artifacts, 'Artifact', 'Build reusable evaluation templates — skill matrices, seniority ladders, scorecards.')}
+          </div>
+
+          <div class="dash-panel" data-tab="crew">
+            ${this._renderTabContent('crew', crewMembers, 'Crew member', 'Add crew members and evaluate them against your artifacts.')}
+          </div>
+
+          <div class="dash-panel" data-tab="initiatives" id="initiatives-panel">
+            ${this._renderInitiativesBoard(setup.initiatives || {})}
+          </div>
+
+          `;
+
+        document.getElementById('tip-bar').style.display = '';
+        this._counts = { artifacts: artifacts.length, crew: crewMembers.length, initiatives: initiativesCount };
+        this._updateTabActions(this._activeTab, this._counts);
+        // Restore notification dots that were set before re-render
+        this._notifyTabs.forEach(tab => this._setTabDot(tab, true));
+      },
+
+      _renderTabContent(tab, items, itemLabel, emptyDesc) {
+        if (!items.length) {
+          return `
+            <div class="empty-state">
+              <div class="empty-state__icon">${tab === 'artifacts' ? '🗂️' : tab === 'crew' ? '👥' : '🎯'}</div>
+              <div class="empty-state__title">No ${itemLabel.toLowerCase()}s yet</div>
+              <div class="empty-state__sub">${emptyDesc}</div>
+            </div>`;
+        }
+
+        const newIds = this._newItems[tab] || new Set();
+
+        const cards = items.map(item => `
+          <div class="module-card${newIds.has(item.id) ? ' module-card--new' : ''}" data-id="${item.id}" style="cursor:pointer" onclick="Pages.dashboard._open('${tab}', '${item.id}')">
+            <div class="module-card__actions">
+              ${tab === 'artifacts' || tab === 'crew' ? `
+              <button class="module-card__action-btn" title="Duplicate" onclick="event.stopPropagation();Pages.dashboard._copy('${tab}','${item.id}')">📋</button>
+              <button class="module-card__action-btn" title="Download JSON" onclick="event.stopPropagation();Pages.dashboard._download('${tab}','${item.id}')">📥</button>
+              ` : ''}
+              <button class="module-card__action-btn" title="Edit" onclick="event.stopPropagation();Pages.dashboard._edit('${tab}','${item.id}')">✏️</button>
+              <button class="module-card__action-btn module-card__action-btn--danger" title="Delete" onclick="event.stopPropagation();Pages.dashboard._delete('${tab}','${item.id}','${Utils.esc(item.name)}')">🗑</button>
+            </div>
+            <div class="module-card__body">
+              <div class="module-card__title">${Utils.esc(item.name)}</div>
+              ${item.description ? `<div class="module-card__desc">${Utils.esc(item.description)}</div>` : ''}
+            </div>
+            ${tab === 'artifacts' ? (item.model === 'questionnaire' ? `<span class="module-card__label">Questionnaire</span>` : (item.type ? `<span class="module-card__label">${Utils.esc(item.type)}</span>` : '')) : (item.type ? `<span class="module-card__label">${Utils.esc(item.type)}</span>` : '')}
+          </div>`).join('');
+
+        return `<div class="module-grid">${cards}</div>`;
+      },
+
+      _updateTabActions(tab, counts) {
+        const labels = { artifacts: 'Artifact', crew: 'Crew member', initiatives: 'Initiative' };
+        const label  = labels[tab] || 'Item';
+        const count  = counts[tab] || 0;
+        const countEl = document.getElementById('dash-tab-count');
+        if (countEl) countEl.textContent = `${count} ${label}${count !== 1 ? 's' : ''}`;
+      },
+
+      // ── Initiatives (Kanban board) ─────────────────────────────────────────
+
+      _renderInitiativesBoard(initiatives) {
+        const columnOrder = initiatives.columnOrder || ['todo'];
+        const columns = initiatives.columns || {};
+
+        let html = '<div class="kanban-board">';
+
+        columnOrder.forEach(col => {
+          const items = initiatives[col] || [];
+          const columnLabel = columns[col] || col;
+          html += `
+            <div class="kanban-column" data-column="${col}">
+              <div class="kanban-column__header">
+                <input type="text" class="kanban-column__title" value="${Utils.esc(columnLabel)}" data-column="${col}" onfocus="this.select()" onblur="Pages.dashboard._saveColumnName('${col}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" onclick="this.removeAttribute('readonly')" readonly>
+                <button class="kanban-column__delete module-card__action-btn module-card__action-btn--danger" onclick="event.stopPropagation();Pages.dashboard._deleteColumn('${col}')" title="Delete column">🗑</button>
+              </div>
+              <div class="kanban-cards" data-column="${col}">
+                ${items.map(item => `
+                  <div class="kanban-card" data-id="${item.id}" draggable="true" onclick="Pages.dashboard._editInitiative('${item.id}')">
+                    <div class="kanban-card__content">
+                      <div class="kanban-card__title">${Utils.esc(item.name || 'Untitled')}</div>
+                      ${item.deadline ? `<div class="kanban-card__date">📅 ${Utils.formatDate(item.deadline)}</div>` : ''}
+                    </div>
+                    <button class="kanban-card__delete module-card__action-btn module-card__action-btn--danger" onclick="event.stopPropagation();Pages.dashboard._deleteInitiative('${item.id}')" title="Delete">🗑</button>
+                  </div>
+                `).join('')}
+              </div>
+              <button class="btn btn--secondary btn--sm kanban-add-btn" onclick="Pages.dashboard._createInitiative('${col}')">+ Add</button>
+            </div>
+          `;
+        });
+
+        html += `
+          <div class="kanban-column kanban-column--add">
+            <button class="kanban-add-column-btn" onclick="Pages.dashboard._showAddColumnDialog()" title="Add column">
+              <span class="kanban-add-column-btn__icon">➕</span>
+            </button>
+          </div>
+        </div>`;
+
+        // Setup drag and drop after rendering
+        setTimeout(() => this._setupKanbanDragDrop(), 0);
+
+        return html;
+      },
+
+      _saveColumnName(columnId, newName) {
+        const setup = App.setup;
+        if (!setup.initiatives) return;
+
+        const trimmedName = newName.trim();
+        if (!trimmedName) {
+          Toast.show('Column name is required', 'error');
+          return;
+        }
+
+        setup.initiatives.columns = setup.initiatives.columns || {};
+        const oldName = setup.initiatives.columns[columnId];
+
+        if (trimmedName === oldName) return; // No change
+
+        setup.initiatives.columns[columnId] = trimmedName;
+        App.saveToStorage(setup);
+
+        // Re-render the initiatives board
+        const panel = document.getElementById('initiatives-panel');
+        if (panel) {
+          panel.innerHTML = this._renderInitiativesBoard(setup.initiatives);
+        }
+
+        Toast.show('Column renamed', 'success');
+      },
+
+      _deleteColumn(columnId) {
+        const setup = App.setup;
+        if (!setup.initiatives) return;
+
+        const columnName = setup.initiatives.columns?.[columnId] || columnId;
+        const message = `Delete ${columnName} including its content? This cannot be undone.`;
+
+        if (!confirm(message)) return;
+
+        // Remove the column
+        const newColumnOrder = setup.initiatives.columnOrder.filter(col => col !== columnId);
+        setup.initiatives.columnOrder = newColumnOrder;
+
+        // Remove column label
+        if (setup.initiatives.columns) {
+          delete setup.initiatives.columns[columnId];
+        }
+
+        // Remove all cards in the column
+        delete setup.initiatives[columnId];
+
+        App.saveToStorage(setup);
+
+        // Re-render
+        const panel = document.getElementById('initiatives-panel');
+        if (panel) {
+          panel.innerHTML = this._renderInitiativesBoard(setup.initiatives);
+        }
+
+        // Recalculate initiatives count and update counter
+        const columnOrder = setup.initiatives.columnOrder || ['todo'];
+        let initiativesCount = 0;
+        for (const col of columnOrder) {
+          initiativesCount += (setup.initiatives[col] || []).length;
+        }
+        this._counts.initiatives = initiativesCount;
+        this._updateTabActions(this._activeTab, this._counts);
+
+        Toast.show('Column deleted', 'success');
+      },
+
+      _showAddColumnDialog() {
+        const setup = App.setup;
+        if (!setup.initiatives) {
+          setup.initiatives = { columns: {}, columnOrder: [] };
+        }
+
+        // Create column with default name
+        const columnId = 'col_' + App.uuid().slice(0, 8);
+        const defaultName = 'New column';
+
+        setup.initiatives.columns = setup.initiatives.columns || {};
+        setup.initiatives.columns[columnId] = defaultName;
+        setup.initiatives.columnOrder = setup.initiatives.columnOrder || [];
+        setup.initiatives.columnOrder.push(columnId);
+        setup.initiatives[columnId] = [];
+
+        App.saveToStorage(setup);
+
+        // Re-render
+        const panel = document.getElementById('initiatives-panel');
+        if (panel) {
+          panel.innerHTML = this._renderInitiativesBoard(setup.initiatives);
+
+          // Focus on the new column's name input for immediate editing
+          requestAnimationFrame(() => {
+            const input = panel.querySelector(`input[data-column="${columnId}"]`);
+            if (input) {
+              input.removeAttribute('readonly');
+              input.focus();
+              input.select();
+            }
+          });
+        }
+
+        Toast.show('Column added', 'success');
+      },
+
+      _setupKanbanDragDrop() {
+        const cards = document.querySelectorAll('.kanban-card');
+        const columns = document.querySelectorAll('.kanban-cards');
+
+        cards.forEach(card => {
+          card.addEventListener('dragstart', (e) => {
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('cardId', card.dataset.id);
+            card.classList.add('dragging');
+          });
+
+          card.addEventListener('dragend', () => {
+            card.classList.remove('dragging');
+          });
+        });
+
+        columns.forEach(col => {
+          col.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+          });
+
+          col.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const cardId = e.dataTransfer.getData('cardId');
+            const newColumn = col.dataset.column;
+            this._moveInitiative(cardId, newColumn);
+          });
+        });
+      },
+
+      _createInitiative(column) {
+        const initiative = {
+          id: App.uuid(),
+          name: '',
+          deadline: '',
+          description: '',
+          updates: [],
+          createdAt: new Date().toISOString()
+        };
+        this._showInitiativeModal(initiative, column, 'create');
+      },
+
+      _editInitiative(id) {
+        const setup = App.setup;
+        let initiative = null;
+        let column = null;
+
+        const columnOrder = setup.initiatives?.columnOrder || ['todo'];
+        for (const col of columnOrder) {
+          const item = (setup.initiatives?.[col] || []).find(i => i.id === id);
+          if (item) {
+            initiative = item;
+            column = col;
+            break;
+          }
+        }
+
+        if (initiative) {
+          // Click on card opens view mode
+          this._showInitiativeModal(initiative, column, 'view');
+        }
+      },
+
+      _switchToEditMode(id, column) {
+        const setup = App.setup;
+        const initiative = (setup.initiatives?.[column] || []).find(i => i.id === id);
+        if (initiative) {
+          this._showInitiativeModal(initiative, column, 'edit');
+        }
+      },
+
+      _switchToViewMode(id, column) {
+        const setup = App.setup;
+        const initiative = (setup.initiatives?.[column] || []).find(i => i.id === id);
+        if (initiative) {
+          this._showInitiativeModal(initiative, column, 'view');
+        }
+      },
+
+      _showInitiativeModal(initiative, column, mode = 'view') {
+        // Remove any existing modal backdrop
+        const existingBackdrop = document.getElementById('initiative-modal-backdrop');
+        if (existingBackdrop) existingBackdrop.remove();
+
+        const backdrop = document.createElement('div');
+        backdrop.className = 'initiative-modal-backdrop active';
+        backdrop.id = 'initiative-modal-backdrop';
+
+        const modal = document.createElement('div');
+        modal.className = 'initiative-modal';
+
+        const isNew = !initiative.id || !App.setup.initiatives?.[column]?.some(i => i.id === initiative.id);
+        const isEditMode = mode === 'create' || mode === 'edit';
+
+        // Build the modal content based on mode
+        let modalContent = `
+          <div class="initiative-modal__header">
+            <h2 class="initiative-modal__title">${mode === 'create' ? 'New Initiative' : (isEditMode ? 'Edit Initiative' : initiative.name)}</h2>
+            <button class="initiative-modal__close" onclick="document.getElementById('initiative-modal-backdrop').remove()">×</button>
+          </div>
+
+          <form onsubmit="return false">
+        `;
+
+        if (isEditMode) {
+          // Create/Edit mode: show input fields
+          modalContent += `
+            <div class="initiative-modal-field">
+              <label>Name *</label>
+              <input type="text" id="init-name" value="${Utils.esc(initiative.name || '')}" placeholder="Initiative name" required>
+            </div>
+
+            <div class="initiative-modal-field">
+              <label>Deadline</label>
+              <input type="date" id="init-deadline" value="${initiative.deadline || ''}">
+            </div>
+
+            <div class="initiative-modal-field">
+              <label>Description</label>
+              <textarea id="init-description" placeholder="Add description...">${Utils.esc(initiative.description || '')}</textarea>
+            </div>
+          `;
+        } else {
+          // View mode: show as text (name already in title)
+          modalContent += `
+            <div class="initiative-modal-view">
+              <div class="initiative-modal-view__field">
+                <div class="initiative-modal-view__label">Deadline</div>
+                <div class="initiative-modal-view__text">${initiative.deadline ? Utils.formatDate(initiative.deadline) : '-'}</div>
+              </div>
+              <div class="initiative-modal-view__field">
+                <div class="initiative-modal-view__label">Description</div>
+                <div class="initiative-modal-view__text">${initiative.description ? Utils.esc(initiative.description) : '-'}</div>
+              </div>
+            </div>
+          `;
+        }
+
+        // Only show updates in view mode
+        if (!isEditMode) {
+          const isEditingUpdate = this._editingUpdateId?.id === initiative.id && this._editingUpdateId?.column === column;
+
+          modalContent += `
+            <div class="initiative-updates">
+              <div class="initiative-updates__title">Updates</div>
+
+              <div class="initiative-add-update-card" ${isEditingUpdate ? 'style="opacity:0.5;pointer-events:none"' : ''}>
+                <textarea id="init-update-text" placeholder="Add an update..." class="initiative-add-update-card__textarea" ${isEditingUpdate ? 'disabled' : ''}></textarea>
+                <input type="date" id="init-update-date" class="initiative-add-update-card__date" ${isEditingUpdate ? 'disabled' : ''}>
+                <button type="button" class="btn btn--primary btn--sm" onclick="Pages.dashboard._addInitiativeUpdate('${initiative.id}', '${column}')" ${isEditingUpdate ? 'disabled' : ''}>Add</button>
+              </div>
+
+              ${(initiative.updates || []).map((update, idx) => {
+                const isEditing = isEditingUpdate && this._editingUpdateId?.updateIndex === idx;
+                return isEditing ? `
+                  <div class="initiative-add-update-card" style="background:var(--color-surface-alt);border:2px solid var(--color-accent)">
+                    <textarea id="edit-update-text" class="initiative-add-update-card__textarea" placeholder="Update text...">${Utils.esc(update.text)}</textarea>
+                    <input type="date" id="edit-update-date" class="initiative-add-update-card__date" value="${update.date || ''}">
+                    <div style="display:flex;gap:8px">
+                      <button type="button" class="btn btn--secondary btn--sm" onclick="Pages.dashboard._cancelInitiativeUpdateEdit()">Cancel</button>
+                      <button type="button" class="btn btn--primary btn--sm" onclick="Pages.dashboard._saveInitiativeUpdateEdit()">Save</button>
+                    </div>
+                  </div>
+                ` : `
+                  <div class="initiative-update-item">
+                    <div class="initiative-update-item__content">
+                      <div class="initiative-update-item__date">${Utils.formatDate(update.date)}</div>
+                      <div class="initiative-update-item__text">${Utils.esc(update.text)}</div>
+                    </div>
+                    <div class="initiative-update-item__actions">
+                      <button class="module-card__action-btn" onclick="event.stopPropagation();Pages.dashboard._editInitiativeUpdate('${initiative.id}', '${column}', ${idx})" title="Edit">✏️</button>
+                      <button class="module-card__action-btn module-card__action-btn--danger" onclick="event.stopPropagation();Pages.dashboard._deleteInitiativeUpdate('${initiative.id}', '${column}', ${idx})" title="Delete">🗑</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `;
+        }
+
+        // Action buttons based on mode
+        modalContent += `
+            <div class="initiative-modal__actions">
+        `;
+
+        if (isEditMode) {
+          // Create/Edit mode: Delete on left, Cancel and Save on right
+          const cancelAction = mode === 'create'
+            ? 'document.getElementById("initiative-modal-backdrop").remove()'
+            : `Pages.dashboard._switchToViewMode('${initiative.id}', '${column}')`;
+
+          modalContent += `
+              <div class="initiative-modal__actions-left">
+                ${!isNew ? '<button type="button" class="btn btn--danger" onclick="Pages.dashboard._deleteInitiative(\'' + initiative.id + '\')">Delete</button>' : ''}
+              </div>
+              <div class="initiative-modal__actions-right">
+                <button type="button" class="btn btn--secondary" onclick="${cancelAction}">Cancel</button>
+                <button type="button" class="btn btn--primary" onclick="Pages.dashboard._saveInitiativeFromModal()">Save</button>
+              </div>
+          `;
+        } else {
+          // View mode: Delete on left, Edit (primary) on right
+          modalContent += `
+              <div class="initiative-modal__actions-left">
+                <button type="button" class="btn btn--danger" onclick="Pages.dashboard._deleteInitiative('${initiative.id}')">Delete</button>
+              </div>
+              <button type="button" class="btn btn--primary" onclick="Pages.dashboard._switchToEditMode('${initiative.id}', '${column}')">Edit</button>
+          `;
+        }
+
+        modalContent += `
+            </div>
+          </form>
+        `;
+
+        modal.innerHTML = modalContent;
+        backdrop.appendChild(modal);
+        document.body.appendChild(backdrop);
+
+        // Store current editing initiative
+        window._currentInitiative = { ...initiative, column, mode };
+      },
+
+      _saveInitiativeFromModal() {
+        if (!window._currentInitiative) {
+          Toast.show('Error: initiative data not found', 'error');
+          return;
+        }
+        const { id, column } = window._currentInitiative;
+        this._saveInitiative(id, column);
+      },
+
+      _saveInitiative(id, column) {
+        try {
+          const nameEl = document.getElementById('init-name');
+          const name = nameEl ? nameEl.value.trim() : '';
+          if (!name) {
+            Toast.show('Name is required', 'error');
+            return;
+          }
+
+          const setup = App.setup;
+          if (!setup.initiatives) {
+            setup.initiatives = { columns: {}, columnOrder: [], 'todo': [] };
+          }
+
+          // Ensure column exists
+          if (!Array.isArray(setup.initiatives[column])) {
+            setup.initiatives[column] = [];
+          }
+
+          const deadlineEl = document.getElementById('init-deadline');
+          const descEl = document.getElementById('init-description');
+          const deadline = deadlineEl ? deadlineEl.value : '';
+          const description = descEl ? descEl.value : '';
+
+          // Check if this is a new initiative
+          const existingInArray = setup.initiatives[column].find(i => i.id === id);
+          const isNew = !existingInArray;
+
+          // Build the initiative object
+          const initiative = {
+            id: id,
+            name: name,
+            deadline: deadline,
+            description: description,
+            updates: (window._currentInitiative?.updates || []),
+            createdAt: window._currentInitiative?.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+
+          if (isNew) {
+            // Adding new initiative
+            setup.initiatives[column].push(initiative);
+          } else {
+            // Updating existing initiative
+            const idx = setup.initiatives[column].findIndex(i => i.id === id);
+            if (idx !== -1) {
+              setup.initiatives[column][idx] = initiative;
+            }
+          }
+
+          App.saveToStorage(setup);
+
+          const backdrop = document.getElementById('initiative-modal-backdrop');
+          if (backdrop) backdrop.remove();
+
+          this._renderDashboard(document.getElementById('app-main'), setup);
+
+          // Update counter immediately
+          const columnOrder = setup.initiatives?.columnOrder || ['todo'];
+          let initiativesCount = 0;
+          for (const col of columnOrder) {
+            initiativesCount += (setup.initiatives[col] || []).length;
+          }
+          this._counts.initiatives = initiativesCount;
+          this._updateTabActions(this._activeTab, this._counts);
+
+          // Re-apply active tab state after re-render
+          requestAnimationFrame(() => {
+            this._switchTab(this._activeTab);
+          });
+
+          Toast.show(isNew ? 'Initiative created' : 'Initiative updated', 'success');
+        } catch (err) {
+          console.error('Save initiative error:', err);
+          Toast.show('Error saving initiative: ' + err.message, 'error');
+        }
+      },
+
+      _addInitiativeUpdate(id, column) {
+        const textEl = document.getElementById('init-update-text');
+        const dateEl = document.getElementById('init-update-date');
+        const text = textEl ? textEl.value.trim() : '';
+        const dateStr = dateEl ? dateEl.value : new Date().toISOString().split('T')[0];
+
+        if (!text) {
+          Toast.show('Update text is required', 'error');
+          return;
+        }
+
+        const setup = App.setup;
+        const initiative = (setup.initiatives?.[column] || []).find(i => i.id === id);
+
+        if (!initiative) {
+          Toast.show('Initiative not found', 'error');
+          return;
+        }
+
+        if (!initiative.updates) initiative.updates = [];
+
+        // Parse date or use today
+        const date = dateStr ? new Date(dateStr + 'T00:00:00').toISOString() : new Date().toISOString();
+
+        initiative.updates.push({
+          date: date,
+          text: text
+        });
+
+        // Save directly to storage
+        App.saveToStorage(setup);
+
+        // Clear inputs
+        if (textEl) textEl.value = '';
+        if (dateEl) dateEl.value = '';
+
+        // Re-render modal in view mode with the updated initiative
+        const backdrop = document.getElementById('initiative-modal-backdrop');
+        if (backdrop) backdrop.remove();
+
+        requestAnimationFrame(() => {
+          this._showInitiativeModal(initiative, column, 'view');
+          Toast.show('Update added', 'success');
+        });
+      },
+
+      _editInitiativeUpdate(id, column, updateIndex) {
+        // Store editing state
+        this._editingUpdateId = { id, column, updateIndex };
+
+        // Re-render modal with edit mode for this update
+        const setup = App.setup;
+        const initiative = (setup.initiatives?.[column] || []).find(i => i.id === id);
+
+        const backdrop = document.getElementById('initiative-modal-backdrop');
+        if (backdrop) backdrop.remove();
+
+        requestAnimationFrame(() => {
+          this._showInitiativeModal(initiative, column, 'view');
+        });
+      },
+
+      _saveInitiativeUpdateEdit() {
+        if (!this._editingUpdateId) return;
+
+        const { id, column, updateIndex } = this._editingUpdateId;
+        const setup = App.setup;
+        const initiative = (setup.initiatives?.[column] || []).find(i => i.id === id);
+
+        if (!initiative || !initiative.updates || !initiative.updates[updateIndex]) {
+          Toast.show('Update not found', 'error');
+          return;
+        }
+
+        const newText = document.getElementById('edit-update-text')?.value?.trim();
+        const newDate = document.getElementById('edit-update-date')?.value;
+
+        if (!newText) {
+          Toast.show('Update text is required', 'error');
+          return;
+        }
+
+        initiative.updates[updateIndex].text = newText;
+        if (newDate) initiative.updates[updateIndex].date = newDate;
+
+        App.saveToStorage(setup);
+        this._editingUpdateId = null;
+
+        // Re-render modal
+        const backdrop = document.getElementById('initiative-modal-backdrop');
+        if (backdrop) backdrop.remove();
+
+        requestAnimationFrame(() => {
+          this._showInitiativeModal(initiative, column, 'view');
+          Toast.show('Update saved', 'success');
+        });
+      },
+
+      _cancelInitiativeUpdateEdit() {
+        this._editingUpdateId = null;
+
+        // Re-render modal
+        const backdrop = document.getElementById('initiative-modal-backdrop');
+        if (backdrop) backdrop.remove();
+
+        const setup = App.setup;
+        const initiatives = setup.initiatives || {};
+        const firstColumn = Object.keys(initiatives).find(col => Array.isArray(initiatives[col]) && initiatives[col].length > 0);
+
+        if (firstColumn) {
+          const initiative = initiatives[firstColumn][0];
+          requestAnimationFrame(() => {
+            this._showInitiativeModal(initiative, firstColumn, 'view');
+          });
+        }
+      },
+
+      _deleteInitiativeUpdate(id, column, updateIndex) {
+        if (!confirm('Delete this update?')) return;
+
+        const setup = App.setup;
+        const initiative = (setup.initiatives?.[column] || []).find(i => i.id === id);
+
+        if (!initiative || !initiative.updates) {
+          Toast.show('Update not found', 'error');
+          return;
+        }
+
+        initiative.updates.splice(updateIndex, 1);
+        App.saveToStorage(setup);
+
+        // Re-render modal
+        const backdrop = document.getElementById('initiative-modal-backdrop');
+        if (backdrop) backdrop.remove();
+
+        requestAnimationFrame(() => {
+          this._showInitiativeModal(initiative, column, 'view');
+          Toast.show('Update deleted', 'success');
+        });
+      },
+
+      _moveInitiative(id, newColumn) {
+        const setup = App.setup;
+        if (!setup.initiatives) return;
+
+        let initiative = null;
+        let oldColumn = null;
+
+        const columnOrder = setup.initiatives?.columnOrder || ['todo'];
+        for (const col of columnOrder) {
+          const idx = (setup.initiatives[col] || []).findIndex(i => i.id === id);
+          if (idx !== -1) {
+            initiative = setup.initiatives[col][idx];
+            oldColumn = col;
+            break;
+          }
+        }
+
+        if (initiative && oldColumn !== newColumn) {
+          setup.initiatives[oldColumn] = setup.initiatives[oldColumn].filter(i => i.id !== id);
+          if (!setup.initiatives[newColumn]) setup.initiatives[newColumn] = [];
+          setup.initiatives[newColumn].push(initiative);
+          App.saveToStorage(setup);
+          this._renderDashboard(document.getElementById('app-main'), setup);
+          requestAnimationFrame(() => {
+            this._switchTab(this._activeTab);
+          });
+        }
+      },
+
+      _deleteInitiative(id) {
+        if (!confirm('Delete this initiative?')) return;
+
+        const setup = App.setup;
+        const columnOrder = setup.initiatives?.columnOrder || ['todo'];
+        for (const col of columnOrder) {
+          setup.initiatives[col] = (setup.initiatives[col] || []).filter(i => i.id !== id);
+        }
+
+        App.saveToStorage(setup);
+        const backdrop = document.getElementById('initiative-modal-backdrop');
+        if (backdrop) backdrop.remove();
+        this._renderDashboard(document.getElementById('app-main'), setup);
+
+        // Update counter immediately
+        let initiativesCount = 0;
+        for (const col of columnOrder) {
+          initiativesCount += (setup.initiatives[col] || []).length;
+        }
+        this._counts.initiatives = initiativesCount;
+        this._updateTabActions(this._activeTab, this._counts);
+
+        requestAnimationFrame(() => {
+          this._switchTab(this._activeTab);
+        });
+        Toast.show('Initiative deleted', 'success');
+      },
+
+      // ── Tab switching ────────────────────────────────────────────────────────
+
+      _switchTab(tab) {
+        this._activeTab = tab;
+        localStorage.setItem('crewkit_active_tab', tab);
+        document.querySelectorAll('.dash-tab').forEach(btn => {
+          btn.classList.toggle('dash-tab--active', btn.dataset.tab === tab);
+        });
+        document.querySelectorAll('.dash-panel').forEach(panel => {
+          panel.classList.toggle('dash-panel--active', panel.dataset.tab === tab);
+        });
+        this._updateTabActions(tab, this._counts || {});
+
+        // Clear notification dot when user visits the tab
+        if (this._notifyTabs.has(tab)) {
+          this._notifyTabs.delete(tab);
+          this._setTabDot(tab, false);
+
+          // Trigger glow animation on newly imported cards in this tab
+          const newIds = this._newItems[tab];
+          if (newIds && newIds.size > 0) {
+            newIds.forEach(id => {
+              const card = document.querySelector(`.module-card[data-id="${id}"]`);
+              if (card) {
+                card.classList.remove('module-card--new');
+                // Force reflow so animation replays
+                void card.offsetWidth;
+                card.classList.add('module-card--new');
+                // Clean up after animation
+                setTimeout(() => card.classList.remove('module-card--new'), 2100);
+              }
+            });
+            // Clear new items tracking after showing
+            setTimeout(() => this._newItems[tab].clear(), 2200);
+          }
+        }
+      },
+
+      _setTabDot(tab, show) {
+        const btn = document.querySelector(`.dash-tab[data-tab="${tab}"]`);
+        if (btn) btn.classList.toggle('dash-tab--notify', show);
+      },
+
+      // ── Navigation ───────────────────────────────────────────────────────────
+
+      _create(tab) {
+        if (tab === 'artifacts') {
+          window.location.href = 'artifact-builder.html?from=artifacts';
+        } else if (tab === 'crew') {
+          window.location.href = 'crew-member.html?from=crew';
+        } else if (tab === 'initiatives') {
+          this._createInitiative('todo');
+        }
+      },
+
+      _open(tab, id) {
+        if (tab === 'artifacts') {
+          window.location.href = `artifact-builder.html?id=${id}&view=1&from=artifacts`;
+        } else if (tab === 'crew') {
+          window.location.href = `crew-member.html?id=${id}&from=crew`;
+        }
+      },
+
+      _edit(tab, id) {
+        if (tab === 'artifacts') {
+          window.location.href = `artifact-builder.html?id=${id}&from=artifacts`;
+        } else if (tab === 'crew') {
+          window.location.href = `crew-member.html?id=${id}&edit=1&from=crew`;
+        }
+      },
+
+      // ── Import ───────────────────────────────────────────────────────────────
+
+      _openImport() {
+        document.getElementById('import-file-input').click();
+      },
+
+      async _importFiles(files, alreadyParsed = false) {
+        const setup = App.setup;
+        if (!setup) return;
+
+        // Tab label map for human-readable names in toasts
+        const tabLabels = { artifacts: 'Artifacts', crew: 'Crew' };
+
+        // Detect which tab an imported item belongs to
+        const detectTab = (data) => {
+          // Artifact: has a "type" field that maps to artifact types, or explicit itemType
+          if (data.itemType === 'artifact') return 'artifacts';
+          if (data.itemType === 'crewMember') return 'crew';
+          // Heuristic: artifacts have a "groups" array or a artifact "type" field
+          if (Array.isArray(data.groups) || ['score', 'scale', 'selective'].includes(data.type)) return 'artifacts';
+          // Crew members typically have an email or role
+          if (data.role !== undefined || (data.email !== undefined && data.artifacts !== undefined)) return 'crew';
+          return null;
+        };
+
+        for (const file of files) {
+          if (!file.name.endsWith('.json')) {
+            Toast.show(`"${file.name}" is not a JSON file — skipped.`, 'error');
+            continue;
+          }
+
+          try {
+            // If already parsed by the drop handler, reuse; otherwise read from disk
+            const data = alreadyParsed && file._parsedData ? file._parsedData : JSON.parse(await Utils.readFile(file));
+            const tab  = detectTab(data);
+
+            if (!tab) {
+              Toast.show(`Could not identify type for "${file.name}". Make sure it's a valid CrewKit export.`, 'error', 5000);
+              continue;
+            }
+
+            // Ensure a fresh ID
+            data.id = App.uuid();
+            data.importedAt = new Date().toISOString();
+
+            const key = tab === 'artifacts' ? 'artifacts' : 'crewMembers';
+            setup[key] = setup[key] || [];
+            setup[key].push(data);
+
+            // Track new item for highlight
+            this._newItems[tab].add(data.id);
+
+            // Show notification dot if on a different tab
+            if (tab !== this._activeTab) {
+              this._notifyTabs.add(tab);
+              this._setTabDot(tab, true);
+            }
+
+            const itemName = data.name || file.name.replace('.json', '');
+            Toast.show(`✅ "${itemName}" added to ${tabLabels[tab]}.`, 'success', 4000);
+          } catch {
+            Toast.show(`Failed to parse "${file.name}". Check the file and try again.`, 'error');
+          }
+        }
+
+        App.saveToStorage(setup);
+        const activeTab = this._activeTab;
+        this._renderDashboard(document.getElementById('app-main'), setup);
+        this._switchTab(activeTab);
+
+        // If any new items landed on the active tab, glow them immediately
+        const newInActive = this._newItems[this._activeTab];
+        if (newInActive && newInActive.size > 0) {
+          // Already rendered with class, clean up after animation
+          setTimeout(() => {
+            newInActive.forEach(id => {
+              const card = document.querySelector(`.module-card[data-id="${id}"]`);
+              if (card) card.classList.remove('module-card--new');
+            });
+            this._newItems[this._activeTab].clear();
+          }, 2200);
+        }
+      },
+
+      // ── Delete / Copy / Download ─────────────────────────────────────────────
+
+      _delete(tab, id, name) {
+        if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+        const setup = App.setup;
+        const key = tab === 'artifacts' ? 'artifacts' : 'crewMembers';
+        setup[key] = (setup[key] || []).filter(item => item.id !== id);
+        App.saveToStorage(setup);
+        const activeTab = Pages.dashboard._activeTab;
+        Pages.dashboard._renderDashboard(document.getElementById('app-main'), setup);
+        Pages.dashboard._switchTab(activeTab);
+        Toast.show(`"${name}" deleted.`, 'default');
+      },
+
+      _copy(tab, id) {
+        const setup = App.setup;
+        const key   = tab === 'artifacts' ? 'artifacts' : 'crewMembers';
+        const items = setup[key] || [];
+        const orig  = items.find(i => i.id === id);
+        if (!orig) return;
+        const copy = JSON.parse(JSON.stringify(orig));
+        copy.id        = App.uuid();
+        copy.name      = '(copy) ' + orig.name;
+        copy.createdAt = new Date().toISOString();
+        copy.updatedAt = new Date().toISOString();
+        setup[key].push(copy);
+        App.saveToStorage(setup);
+        const activeTab = Pages.dashboard._activeTab;
+        Pages.dashboard._renderDashboard(document.getElementById('app-main'), setup);
+        Pages.dashboard._switchTab(activeTab);
+        Toast.show(`"${copy.name}" created.`, 'success');
+      },
+
+      _download(tab, id) {
+        const key  = tab === 'artifacts' ? 'artifacts' : 'crewMembers';
+        const item = (App.setup[key] || []).find(i => i.id === id);
+        if (!item) return;
+        const itemType = tab === 'artifacts' ? 'artifact' : 'crewMember';
+        const suffix   = tab === 'artifacts' ? '_artifact' : '_member';
+        const data = Object.assign({ itemType }, item);
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `${item.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}${suffix}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        Toast.show(`"${item.name}" downloaded.`, 'success');
+      },
+
+      // ── Global drag-drop overlay ─────────────────────────────────────────────
+
+      _isSetupJson(data) {
+        // setup.json has a top-level "user" object and arrays for artifacts/crewMembers
+        return data && typeof data === 'object'
+          && data.user && typeof data.user === 'object'
+          && (Array.isArray(data.artifacts) || Array.isArray(data.crewMembers));
+      },
+
+      _initGlobalDrop() {
+        const overlay = document.getElementById('global-dropzone');
+        if (!overlay) return;
+
+        let dragDepth = 0; // track enter/leave pairs to avoid flicker on child elements
+
+        document.addEventListener('dragenter', e => {
+          // Only show import overlay for file drags, not internal drag-and-drop
+          if (e.dataTransfer?.items && Array.from(e.dataTransfer.items).some(item => item.kind === 'file')) {
+            e.preventDefault();
+            dragDepth++;
+            overlay.classList.add('active');
+          }
+        });
+
+        document.addEventListener('dragleave', e => {
+          if (e.dataTransfer?.items && Array.from(e.dataTransfer.items).some(item => item.kind === 'file')) {
+            dragDepth--;
+            if (dragDepth <= 0) {
+              dragDepth = 0;
+              overlay.classList.remove('active');
+            }
+          }
+        });
+
+        document.addEventListener('dragover', e => {
+          // Only prevent default for file drags
+          if (e.dataTransfer?.items && Array.from(e.dataTransfer.items).some(item => item.kind === 'file')) {
+            e.preventDefault(); // required to allow drop
+          }
+        });
+
+        overlay.addEventListener('drop', async e => {
+          e.preventDefault();
+          dragDepth = 0;
+          overlay.classList.remove('active');
+
+          const files = Array.from(e.dataTransfer?.files || []);
+          if (!files.length) return;
+
+          // Separate valid import files from rejected ones
+          const toImport = [];
+          for (const file of files) {
+            if (!file.name.endsWith('.json')) {
+              Toast.show(`"${file.name}" is not a JSON file.`, 'error');
+              continue;
+            }
+            // Peek at the file to check if it's a setup.json
+            try {
+              const text = await Utils.readFile(file);
+              const data = JSON.parse(text);
+              if (this._isSetupJson(data)) {
+                Toast.show(`"${file.name}" looks like a setup.json — use the dropzone on the start screen to load it.`, 'error', 5000);
+              } else {
+                // Store parsed data so we don't re-read
+                file._parsedData = data;
+                toImport.push(file);
+              }
+            } catch {
+              Toast.show(`"${file.name}" could not be parsed.`, 'error');
+            }
+          }
+
+          if (toImport.length) {
+            await this._importFiles(toImport, true /* alreadyParsed */);
+          }
+        });
+      },
+
+      // ── Dropzone (empty state) ───────────────────────────────────────────────
+
+      _initDropzone() {
+        const zone  = document.getElementById('dropzone');
+        const input = document.getElementById('file-input');
+        if (!zone || !input) return;
+
+        zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+        zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+        zone.addEventListener('drop', e => {
+          e.preventDefault();
+          zone.classList.remove('dragover');
+          const file = e.dataTransfer?.files?.[0];
+          if (file) this._handleFile(file);
+        });
+        input.addEventListener('change', e => {
+          if (e.target.files?.[0]) this._handleFile(e.target.files[0]);
+        });
+      },
+
+      async _handleFile(file) {
+        if (!file || !file.name.endsWith('.json')) {
+          Toast.show('Please select a .json file.', 'error');
+          return;
+        }
+        try {
+          const text = await Utils.readFile(file);
+          const data = JSON.parse(text);
+
+          // Check if this is an artifact.json or setup.json
+          // Artifacts have: id, name, and either model field or matrix/questionnaire structure
+          const isArtifact = data.id && data.name && (
+            data.model === 'matrix' ||
+            data.model === 'questionnaire' ||
+            data.type === 'score' ||
+            data.type === 'scale' ||
+            data.type === 'selective' ||
+            (data.fields && Array.isArray(data.fields))
+          );
+
+          if (isArtifact) {
+            // This is an artifact - ensure it has a model field
+            if (!data.model) {
+              data.model = 'matrix'; // Default old artifacts to matrix
+            }
+            Pages.taskFiller.init(data);
+            Pages.taskFiller.returnToDashboard = false;
+          } else {
+            // This is a setup.json
+            const result = Validator.validateSetup(data);
+            App.saveToStorage(data);
+            if (result.valid) {
+              App.markClean();
+              Toast.show('✅ setup.json loaded.', 'success');
+            } else {
+              Toast.show('setup.json loaded but has errors.', 'warning');
+            }
+            setTimeout(() => location.reload(), 800);
+          }
+        } catch {
+          Toast.show('Could not parse JSON file. Check the file and try again.', 'error');
+        }
+      },
+
+    };
+
+  /* Task Filler Object - handles filling artifacts in task mode */
+  Pages.taskFiller = {
+    artifact: null,
+
+    init(artifact) {
+      this.artifact = JSON.parse(JSON.stringify(artifact));
+      this.render();
+    },
+
+    render() {
+      const main = document.getElementById('app-main');
+      if (!main) return;
+
+      const { name, description, model } = this.artifact;
+
+      let content = `
+        <div class="task-artifact-container">
+          <div class="task-artifact-header">
+            <h2 class="task-artifact-title">${Utils.esc(name)}</h2>
+            ${description ? `<p class="task-artifact-desc">${Utils.esc(description)}</p>` : ''}
+          </div>
+          <div id="artifact-fill-content"></div>
+          <div class="task-toolbar">
+            <button class="btn btn--ghost" onclick="Pages.taskFiller.goBack()">Back</button>
+            <button class="btn btn--primary" onclick="Pages.taskFiller.downloadArtifact()">Save & Download</button>
+          </div>
+        </div>`;
+
+      main.innerHTML = content;
+
+      // Render appropriate fill interface
+      if (model === 'matrix') {
+        this.renderMatrixFill();
+      } else if (model === 'questionnaire') {
+        this.renderQuestionnaireFill();
+      }
+    },
+
+    renderMatrixFill() {
+      const container = document.getElementById('artifact-fill-content');
+      if (!container) return;
+
+      const cols   = this.artifact.columns;
+      const type   = this.artifact.type;
+      const isScale = type === 'scale';
+
+      // Ensure all rows have values objects
+      this.artifact.groups.forEach((group) => {
+        group.rows.forEach((row) => {
+          if (!row.values) row.values = {};
+        });
+      });
+
+      let html = `<div class="matrix-wrap" style="background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 16px; margin-top: 12px;">
+      <table class="matrix-table"><thead><tr>`;
+      html += `<th class="th-label-col"><div class="col-head" style="min-height:48px"></div></th>`;
+
+      // Column headers
+      cols.forEach((col) => {
+        html += `<th><div class="col-head" style="align-items:center;justify-content:center;text-align:center;padding:10px 6px">
+          <span style="font-weight:600;font-size:.8375rem;color:var(--color-text);display:block;text-align:center">${Utils.esc(col.label)}</span>
+        </div></th>`;
+      });
+
+      // Right pole (scale type only)
+      if (isScale) {
+        html += `<th class="th-right-pole"><div class="col-head" style="min-height:48px"></div></th>`;
+      }
+
+      html += `</tr></thead><tbody>`;
+
+      // Render groups and rows
+      this.artifact.groups.forEach((group, gi) => {
+        const groupColspan = cols.length + 1 + (isScale ? 1 : 0);
+
+        // Group header row
+        if (group.label && group.label.trim()) {
+          html += `<tr class="group-header-row">
+            <td class="group-cell" colspan="${groupColspan}">
+              <div class="group-header-inner">
+                <span class="group-label-input" style="cursor:default;font-weight:600;font-size:.9rem;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.05em">${Utils.esc(group.label)}</span>
+              </div>
+            </td>
+          </tr>`;
+        }
+
+        // Skill rows
+        group.rows.forEach((row, ri) => {
+          html += `<tr class="skill-row">`;
+          html += `<td class="row-label-cell">`;
+          html += `<div class="row-label__name" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0">${Utils.esc(row.label)}</div>`;
+          if (row.description && row.description.trim()) {
+            const descId = `desc-${gi}-${ri}`;
+            html += `<button class="row-desc-toggle" onclick="Pages.taskFiller.toggleDesc('${descId}', this)">Show description</button>
+                     <span class="row-desc-text" id="${descId}">${Utils.esc(row.description)}</span>`;
+          }
+          html += `</td>`;
+
+          // Data cells
+          cols.forEach((col, ci) => {
+            const val = row.values[col.id];
+            if (type === 'score') {
+              const selectedIdx = this._getScoreIdx(row, cols);
+              const filled = selectedIdx !== null && ci <= selectedIdx;
+              html += `<td class="matrix-cell ${filled ? 'matrix-cell--filled-score' : ''} matrix-cell--readonly" onclick="Pages.taskFiller.onScoreClick(${gi}, ${ri}, ${ci})" style="cursor:pointer"></td>`;
+            } else if (type === 'scale') {
+              const colVal = parseInt(col.label);
+              const rowVal = row.values['__scale'] ?? null;
+              const isNeg = colVal < 0, isPos = colVal > 0;
+              const filled = rowVal !== null && (
+                isNeg ? colVal >= rowVal && rowVal < 0 :
+                isPos ? colVal <= rowVal && rowVal > 0 : false
+              );
+              html += `<td class="matrix-cell ${isNeg ? 'matrix-cell--scale-neg' : 'matrix-cell--scale-pos'} ${filled ? 'matrix-cell--filled-score' : ''} matrix-cell--readonly" onclick="Pages.taskFiller.onScaleClick(${gi}, ${ri}, ${colVal})" style="cursor:pointer"></td>`;
+            } else {
+              html += `<td class="matrix-cell ${val === true ? 'matrix-cell--filled-selective' : ''} matrix-cell--readonly" onclick="Pages.taskFiller.onSelectiveClick(${gi}, ${ri}, '${col.id}')" style="cursor:pointer">
+                <div class="matrix-cell__dot"></div>
+              </td>`;
+            }
+          });
+
+          // Right pole cell (scale type only)
+          if (isScale) {
+            html += `<td class="row-right-pole-cell">
+              <div class="row-label__name" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0">${Utils.esc(row.poleRight || '')}</div>
+            </td>`;
+          }
+
+          html += `</tr>`;
+        });
+      });
+
+      html += `</tbody></table>
+      </div>`;
+      container.innerHTML = html;
+    },
+
+    _getScoreIdx(row, cols) {
+      let maxIdx = null;
+      cols.forEach((col, ci) => { if (row.values[col.id]) maxIdx = ci; });
+      return maxIdx;
+    },
+
+    onScoreClick(gi, ri, ci) {
+      const row  = this.artifact.groups[gi].rows[ri];
+      const cols = this.artifact.columns;
+      const currentIdx = this._getScoreIdx(row, cols);
+      cols.forEach(col => { row.values[col.id] = false; });
+      if (currentIdx !== ci) {
+        for (let i = 0; i <= ci; i++) row.values[cols[i].id] = true;
+      }
+      this.renderMatrixFill();
+    },
+
+    onScaleClick(gi, ri, colVal) {
+      const row = this.artifact.groups[gi].rows[ri];
+      row.values['__scale'] = row.values['__scale'] === colVal ? null : colVal;
+      this.renderMatrixFill();
+    },
+
+    onSelectiveClick(gi, ri, colId) {
+      const row = this.artifact.groups[gi].rows[ri];
+      row.values[colId] = !row.values[colId];
+      this.renderMatrixFill();
+    },
+
+    toggleDesc(descId, btn) {
+      const descEl = document.getElementById(descId);
+      if (!descEl) return;
+      descEl.classList.toggle('show');
+      btn.textContent = descEl.classList.contains('show') ? 'Hide description' : 'Show description';
+    },
+
+    renderQuestionnaireFill() {
+      const container = document.getElementById('artifact-fill-content');
+      if (!container) return;
+
+      const { fields } = this.artifact;
+      if (!this.artifact.responses) this.artifact.responses = {};
+
+      let html = '<div class="q-view-fields-card">';
+
+      const typeLabels = {
+        text: 'Text',
+        date: 'Date',
+        select: 'Select',
+        multiselect: 'Multi-select',
+        rate: 'Rate'
+      };
+
+      fields.forEach((field) => {
+        html += `<div class="q-view-field">`;
+        html += `<div class="q-view-field__label-with-type">
+          <label class="q-view-field__label">${Utils.esc(field.name)} <span class="q-view-field__type-badge">(${typeLabels[field.type] || field.type})</span></label>
+        </div>`;
+
+        const value = this.artifact.responses[field.id] || '';
+
+        switch (field.type) {
+          case 'text':
+            html += `<textarea class="q-view-field__textarea" data-field-id="${field.id}" onchange="Pages.taskFiller.updateResponse('${field.id}', this.value)">${Utils.esc(value)}</textarea>`;
+            break;
+          case 'date':
+            html += `<input type="date" class="q-view-field__input" data-field-id="${field.id}" value="${value}" onchange="Pages.taskFiller.updateResponse('${field.id}', this.value)">`;
+            break;
+          case 'select':
+            html += `<div class="q-view-field__tags">`;
+            (field.options || []).forEach(opt => {
+              const isSelected = value === opt;
+              html += `<button class="q-view-field__tag ${isSelected ? 'q-view-field__tag--selected' : ''}" onclick="event.preventDefault();Pages.taskFiller.updateResponse('${field.id}', '${Utils.esc(opt)}');event.target.closest('.q-view-field').querySelectorAll('.q-view-field__tag').forEach(t => t.classList.remove('q-view-field__tag--selected')); event.target.classList.add('q-view-field__tag--selected')" type="button">${Utils.esc(opt)}</button>`;
+            });
+            html += `</div>`;
+            break;
+          case 'multiselect':
+            html += `<div class="q-view-field__tags">`;
+            (field.options || []).forEach(opt => {
+              const isSelected = Array.isArray(value) && value.includes(opt);
+              html += `<button class="q-view-field__tag ${isSelected ? 'q-view-field__tag--selected' : ''}" onclick="event.preventDefault();Pages.taskFiller.toggleMultiselectTag('${field.id}', '${Utils.esc(opt)}')" type="button">${Utils.esc(opt)}</button>`;
+            });
+            html += `</div>`;
+            break;
+          case 'rate':
+            const rateMax = field.rateMax || 5;
+            const selectedValue = parseInt(value) || 0;
+            html += `<div class="q-view-field__rate" data-field-id="${field.id}" data-rate-max="${rateMax}" data-rate-value="${selectedValue}">`;
+            for (let i = 1; i <= rateMax; i++) {
+              const isSelected = i <= selectedValue;
+              html += `<button class="q-view-field__rate-btn ${isSelected ? 'q-view-field__rate-btn--selected' : ''}" data-rate-index="${i}" onmouseover="Pages.taskFiller.hoverRate(event)" onmouseout="Pages.taskFiller.unhoverRate(event)" onclick="event.preventDefault();Pages.taskFiller.updateRate('${field.id}', '${i}')" type="button">⭐</button>`;
+            }
+            html += `</div>`;
+            break;
+        }
+
+        html += `</div>`;
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+    },
+
+    updateResponse(fieldId, value) {
+      this.artifact.responses[fieldId] = value;
+    },
+
+    updateRate(fieldId, value) {
+      this.artifact.responses[fieldId] = value;
+      // Update UI to show filled stars
+      const container = document.querySelector(`[data-field-id="${fieldId}"]`);
+      if (container) {
+        const buttons = container.querySelectorAll('.q-view-field__rate-btn');
+        buttons.forEach((btn, idx) => {
+          btn.classList.toggle('q-view-field__rate-btn--selected', idx + 1 <= parseInt(value));
+        });
+        container.setAttribute('data-rate-value', value);
+      }
+    },
+
+    hoverRate(e) {
+      const btn = e.target.closest('.q-view-field__rate-btn');
+      if (!btn) return;
+      const container = btn.closest('.q-view-field__rate');
+      const hoverIndex = parseInt(btn.getAttribute('data-rate-index'));
+      const buttons = container.querySelectorAll('.q-view-field__rate-btn');
+      buttons.forEach((b, idx) => {
+        b.classList.toggle('q-view-field__rate-btn--selected', idx + 1 <= hoverIndex);
+      });
+    },
+
+    unhoverRate(e) {
+      const btn = e.target.closest('.q-view-field__rate-btn');
+      if (!btn) return;
+      const container = btn.closest('.q-view-field__rate');
+      const actualValue = parseInt(container.getAttribute('data-rate-value'));
+      const buttons = container.querySelectorAll('.q-view-field__rate-btn');
+      buttons.forEach((b, idx) => {
+        b.classList.toggle('q-view-field__rate-btn--selected', idx + 1 <= actualValue);
+      });
+    },
+
+    toggleMultiselectTag(fieldId, option) {
+      if (!this.artifact.responses[fieldId]) {
+        this.artifact.responses[fieldId] = [];
+      }
+      let arr = this.artifact.responses[fieldId];
+      if (!Array.isArray(arr)) arr = [];
+
+      const idx = arr.indexOf(option);
+      if (idx > -1) {
+        arr.splice(idx, 1);
+      } else {
+        arr.push(option);
+      }
+      this.artifact.responses[fieldId] = arr;
+
+      // Update UI
+      const field = this.artifact.fields.find(f => f.id === fieldId);
+      const container = document.querySelector(`[data-field-id="${fieldId}"]`)?.closest('.q-view-field') || event.target.closest('.q-view-field');
+      if (container) {
+        container.querySelectorAll('.q-view-field__tag').forEach((btn, i) => {
+          const opt = field.options[i];
+          btn.classList.toggle('q-view-field__tag--selected', arr.includes(opt));
+        });
+      }
+    },
+
+    downloadArtifact() {
+      const blob = new Blob([JSON.stringify(this.artifact, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${(this.artifact.name || 'artifact').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_filled.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      Toast.show('✅ Artifact downloaded.', 'success');
+
+      // Redirect to dashboard after download
+      setTimeout(() => {
+        history.replaceState(null, '', 'index.html');
+        this.artifact = null;
+        Pages.dashboard.init();
+      }, 600);
+    },
+
+    goBack() {
+      this.artifact = null;
+      if (this.returnToDashboard) {
+        Pages.dashboard.init();
+      } else {
+        location.reload();
+      }
+    }
+  };
+
+  /* Tasks Page - for users with setup.json to fill artifacts */
+  Pages.tasks = {
+    init() {
+      const main = document.getElementById('app-main');
+      if (!main) return;
+
+      main.innerHTML = `
+        <div class="dashboard-hero">
+          <h1 class="dashboard-hero__title">Fill Artifacts</h1>
+          <p class="dashboard-hero__subtitle">Drop your artifact.json here to fill it out</p>
+
+          <div class="dropzone" id="task-dropzone" onclick="document.getElementById('task-artifact-input').click()">
+            <div class="dropzone__icon">📋</div>
+            <div class="dropzone__title">Drop artifact.json here</div>
+            <div class="dropzone__sub">or <a href="#" onclick="event.stopPropagation();document.getElementById('task-artifact-input').click()">browse for file</a></div>
+            <input type="file" id="task-artifact-input" class="dropzone__input" accept=".json">
+          </div>
+
+          <div style="text-align:center;margin-top:32px">
+            <button class="btn btn--ghost" onclick="Pages.tasks.goBack()">Back to dashboard</button>
+          </div>
+        </div>`;
+
+      this._initDropzone();
+    },
+
+    _initDropzone() {
+      const zone = document.getElementById('task-dropzone');
+      const input = document.getElementById('task-artifact-input');
+      if (!zone || !input) return;
+
+      // Prevent global overlay from interfering
+      zone.addEventListener('dragenter', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+      });
+
+      zone.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        zone.classList.add('dragover');
+      });
+
+      zone.addEventListener('dragleave', e => {
+        e.stopPropagation();
+        zone.classList.remove('dragover');
+      });
+
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        zone.classList.remove('dragover');
+        const file = e.dataTransfer?.files?.[0];
+        if (file) this._handleFile(file);
+      });
+
+      input.addEventListener('change', e => {
+        if (e.target.files?.[0]) this._handleFile(e.target.files[0]);
+      });
+    },
+
+    async _handleFile(file) {
+      if (!file || !file.name.endsWith('.json')) {
+        Toast.show('Please select a .json file.', 'error');
+        return;
+      }
+      try {
+        const text = await Utils.readFile(file);
+        const data = JSON.parse(text);
+
+        // Validate it's an artifact
+        if (!data.id || !data.name || !data.model) {
+          Toast.show('Invalid artifact file. Missing required fields.', 'error');
+          return;
+        }
+
+        // Initialize task filler with return to dashboard callback
+        Pages.taskFiller.init(data);
+        Pages.taskFiller.returnToDashboard = true;
+      } catch {
+        Toast.show('Could not parse artifact file. Check the file and try again.', 'error');
+      }
+    },
+
+    goBack() {
+      history.replaceState(null, '', 'index.html');
+      Pages.dashboard.init();
+    }
+  };
+  </script>
+</body>
+</html>

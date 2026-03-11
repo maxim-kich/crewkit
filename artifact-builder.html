@@ -1,0 +1,2216 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Artifact — CrewKit</title>
+  <link rel="stylesheet" href="typography-tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+
+
+    /* ── Step indicator ──────────────────────────────────────────────────────── */
+    .step-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      margin-bottom: 28px;
+    }
+    .step-indicator__item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: .8125rem;
+      color: var(--color-text-muted);
+    }
+    .step-indicator__num {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: var(--color-border);
+      color: var(--color-text-muted);
+      font-size: .75rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .step-indicator__item--active .step-indicator__num {
+      background: var(--color-accent);
+      color: #fff;
+    }
+    .step-indicator__item--active .step-indicator__label {
+      color: var(--color-text);
+      font-weight: 600;
+    }
+    .step-indicator__item--done .step-indicator__num {
+      background: var(--color-accent-subtle);
+      color: var(--color-accent);
+    }
+    .step-indicator__sep {
+      width: 32px;
+      height: 1px;
+      background: var(--color-border);
+      margin: 0 4px;
+    }
+
+    /* ── Type selector ───────────────────────────────────────────────────────── */
+    .type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .type-card {
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      text-align: left;
+      background: var(--color-surface);
+    }
+    .type-card:hover { border-color: var(--color-accent); }
+    .type-card--active {
+      border-color: var(--color-accent);
+      background: var(--color-accent-subtle);
+    }
+    .type-card__icon  { font-size: 1.5rem; margin-bottom: 8px; }
+    .type-card__name  { font-size: .9rem; font-weight: 600; color: var(--color-text); }
+    .type-card__desc  { font-size: .775rem; color: var(--color-text-muted); margin-top: 4px; line-height: 1.4; }
+
+    /* ── Matrix layout ───────────────────────────────────────────────────────── */
+    .matrix-wrap {
+      overflow-x: auto;
+    }
+
+    /* Single unified table */
+    .matrix-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 600px;
+      font-size: .8375rem;
+    }
+
+    /* ── Ghost columns: handle (left) and action (right) ─────────────────────
+       These columns have no border and no background so they appear to float
+       outside the visible table. */
+    .matrix-table th.th-handle,
+    .matrix-table th.th-action,
+    .matrix-table td.td-handle,
+    .matrix-table td.td-action {
+      border: none !important;
+      border-bottom: none !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      outline: none !important;
+      padding: 0;
+      width: 28px;
+      min-width: 28px;
+      vertical-align: middle;
+    }
+
+    /* ── Column headers ───────────────────────────────────────────────────── */
+    .matrix-table thead th {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      padding: 0;
+      vertical-align: middle;
+      min-width: 80px;
+      width: 80px;
+    }
+    .matrix-table thead th.th-label-col {
+      min-width: 300px;
+      width: 300px;
+      text-align: left;
+      vertical-align: middle;
+    }
+    .col-head {
+      padding: 8px 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .col-head__label {
+      font-weight: 600;
+      color: var(--color-text);
+      background: none;
+      border: none;
+      border-bottom: 1px solid transparent;
+      width: 100%;
+      font-size: .8375rem;
+      outline: none;
+      padding: 2px 0;
+      text-align: center;
+    }
+    .col-head__label:focus { border-bottom-color: var(--color-accent); }
+    .col-head__label::placeholder { color: var(--color-text-muted); font-weight: 400; }
+    .col-head__desc {
+      font-size: .72rem;
+      color: var(--color-text-muted);
+      background: none; border: none;
+      width: 100%; resize: none; outline: none;
+      min-height: 36px; line-height: 1.4;
+      padding: 2px 0; text-align: center;
+    }
+    .col-head__desc:focus { color: var(--color-text); }
+    .col-head__desc::placeholder { font-style: italic; }
+
+    /* ── Group header row ─────────────────────────────────────────────────── */
+    .group-header-row td.group-cell {
+      background: var(--color-surface-alt);
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      /* Left and right borders deliberately omitted — ghost cols provide spacing */
+      border-left: none;
+      border-right: none;
+      padding: 8px 10px;
+    }
+    /* First group row: no top border gap against header */
+    .group-header-row:first-child td.group-cell { border-top: none; }
+
+    .group-header-inner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .group-label-input {
+      background: none; border: none;
+      font-weight: 600; font-size: .8125rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase; letter-spacing: .04em;
+      outline: none; flex: 1;
+      padding: 2px 0;
+      border-bottom: 1px solid transparent;
+    }
+    .group-label-input:focus { border-bottom-color: var(--color-accent); }
+
+    /* ── Skill rows ───────────────────────────────────────────────────────── */
+    /* Row divider via td only — tr-level border would bleed into ghost cols */
+    .matrix-table tbody tr.skill-row td:not(.td-handle):not(.td-action) {
+      border-bottom: 1px solid var(--color-border);
+    }
+    /* Last row of the whole table keeps its bottom border to close the table visually */
+
+    .row-label-cell {
+      border: 1px solid var(--color-border);
+      padding: 8px 10px;
+      vertical-align: top;
+      background: var(--color-surface);
+      width: 300px;
+      max-width: 300px;
+    }
+    .row-label__name {
+      font-weight: 500; background: none; border: none;
+      border-bottom: 1px solid transparent;
+      width: 100%; font-size: .8375rem; outline: none;
+      padding: 2px 0; color: var(--color-text); display: block;
+    }
+    .row-label__name:focus { border-bottom-color: var(--color-accent); }
+    .row-label__name::placeholder { color: var(--color-text-muted); font-weight: 400; }
+    .row-label__desc {
+      font-size: .72rem; color: var(--color-text-muted);
+      background: none; border: none; border-bottom: 1px solid transparent; width: 100%;
+      resize: none; outline: none;
+      min-height: 0; height: 1.2em; line-height: 1.2;
+      padding: 0; margin-top: 3px; display: block;
+    }
+    .row-label__desc:focus { color: var(--color-text); height: auto; min-height: 2.4em; line-height: 1.4; border-bottom-color: var(--color-accent); }
+    .row-label__desc::placeholder { font-style: italic; }
+
+    /* ── Matrix cells ─────────────────────────────────────────────────────── */
+    .matrix-cell {
+      border: 1px solid var(--color-border);
+      padding: 0; text-align: center; vertical-align: middle;
+      cursor: pointer; transition: background .12s; user-select: none;
+    }
+    .matrix-cell--filled-score     { background: var(--color-accent); }
+    .matrix-cell--filled-selective { background: var(--color-accent); }
+    .matrix-cell--readonly         { cursor: default; pointer-events: none; }
+    .matrix-cell__dot {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--color-accent); margin: 0 auto; display: none;
+    }
+    .matrix-cell--filled-selective .matrix-cell__dot { display: block; }
+    .matrix-cell--scale-neg.matrix-cell--filled-score { background: var(--color-accent); }
+    .matrix-cell--scale-pos.matrix-cell--filled-score { background: var(--color-accent); }
+
+    /* ── Scale type: right pole column ────────────────────────────────────── */
+    .matrix-table thead th.th-right-pole {
+      min-width: 200px;
+      width: 200px;
+    }
+    .row-right-pole-cell {
+      width: 200px;
+      max-width: 200px;
+    }
+
+    /* ── Drag handles ─────────────────────────────────────────────────────── */
+    .drag-handle {
+      display: flex; align-items: center; justify-content: center;
+      cursor: grab; color: var(--color-text-muted);
+      opacity: 0.3; font-size: .9rem;
+      width: 28px; height: 100%; min-height: 32px;
+      user-select: none;
+    }
+    .drag-handle:active { cursor: grabbing; }
+    tr.skill-row:hover .drag-handle      { opacity: 0.7; }
+    tr.group-header-row:hover .drag-handle { opacity: 0.7; }
+
+    /* ── Drag-over indicators ─────────────────────────────────────────────── */
+    tr.drag-over-top td.row-label-cell,
+    tr.drag-over-top td.matrix-cell    { box-shadow: inset 0 2px 0 0 var(--color-accent); }
+    tr.drag-over-bottom td.row-label-cell,
+    tr.drag-over-bottom td.matrix-cell { box-shadow: inset 0 -2px 0 0 var(--color-accent); }
+    tr.drag-over-top td.group-cell,
+    tr.drag-over-bottom td.group-cell  { box-shadow: none; }
+    tr.drag-over-top td.group-cell     { border-top: 2px solid var(--color-accent); }
+    tr.drag-over-bottom td.group-cell  { border-bottom: 2px solid var(--color-accent); }
+    tr.dragging-row   { opacity: .35; }
+    tr.dragging-group { opacity: .35; }
+
+    /* ── Delete buttons ───────────────────────────────────────────────────── */
+    .del-row-btn, .del-group-btn {
+      background: none; border: none;
+      color: var(--color-text-muted); cursor: pointer;
+      font-size: .75rem; padding: 2px 4px; line-height: 1;
+      display: flex; align-items: center; justify-content: center;
+      width: 28px; opacity: 0.4;
+    }
+    .del-row-btn:hover, .del-group-btn:hover { color: var(--color-danger); opacity: 1; }
+    tr.skill-row:hover .del-row-btn         { opacity: 0.7; }
+    tr.group-header-row:hover .del-group-btn { opacity: 0.7; }
+
+    /* Delete column button — sits top-right of header cell */
+    .del-col-btn {
+      position: absolute; top: 2px; right: 2px;
+      background: none; border: none;
+      color: var(--color-text-muted); cursor: pointer;
+      font-size: .65rem; padding: 1px 3px; line-height: 1;
+      opacity: 0; transition: opacity .1s;
+    }
+    th:hover .del-col-btn { opacity: 0.7; }
+    .del-col-btn:hover { color: var(--color-danger); opacity: 1; }
+
+    /* Add row/col controls */
+    .add-row-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: .8rem;
+      color: var(--color-accent);
+      background: none;
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 7px 14px;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    .add-row-btn:hover { border-color: var(--color-accent); background: var(--color-accent-subtle); }
+
+    .add-col-btn-cell {
+      border: none;
+      background: transparent;
+      padding: 4px;
+      vertical-align: top;
+    }
+    .add-col-btn {
+      background: none;
+      border: 1px dashed var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-accent);
+      font-size: .75rem;
+      padding: 4px 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      writing-mode: vertical-rl;
+      height: 80px;
+    }
+    .add-col-btn:hover { border-color: var(--color-accent); background: var(--color-accent-subtle); }
+
+    /* Bottom toolbar */
+    .fb-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid var(--color-border);
+      flex-wrap: wrap;
+    }
+
+    /* Scale pole inputs */
+    .pole-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+      font-size: .8375rem;
+    }
+    .pole-input {
+      flex: 1;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      font-size: .8375rem;
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      outline: none;
+    }
+    .pole-input:focus { border-color: var(--color-accent); }
+
+    /* Score range input */
+    .score-range-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: .8375rem;
+      margin-bottom: 0;
+    }
+    .score-range-row input[type=number] {
+      width: 64px;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 6px 8px;
+      font-size: .8375rem;
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      outline: none;
+      text-align: center;
+    }
+    .score-range-row input[type=number]:focus { border-color: var(--color-accent); }
+
+    /* Settings panel — now lives inside the main card, no extra border */
+    .fb-settings {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--color-border);
+    }
+    .fb-settings__title {
+      font-size: .8375rem;
+      font-weight: 600;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      margin-bottom: 14px;
+    }
+
+    /* Step 2 — inline name edit */
+    .matrix-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .matrix-header__name {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--color-text);
+      line-height: 1.2;
+    }
+    .edit-name-btn {
+      font-size: .775rem;
+      color: var(--color-accent);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px 0;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .edit-name-btn:hover { opacity: .75; }
+
+    /* Inline name edit form */
+    .inline-name-form {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    .inline-name-form input {
+      flex: 1;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      padding: 7px 12px;
+      font-size: 1.1rem;
+      font-weight: 700;
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      outline: none;
+    }
+    .inline-name-form input:focus { border-color: var(--color-accent); }
+
+    /* ── View mode: name + edit button in page-header row ──────────────────── */
+    .view-title-row {
+      display: none; /* shown only in view mode via JS */
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .view-title-row h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--color-text);
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    /* ── Step 2 inline name + description — same style as row-label__name ───── */
+    #matrix-name-input, #matrix-desc-input {
+      width: 100%; background: none; border: none;
+      border-bottom: 1px solid transparent;
+      outline: none; font-family: inherit; display: block;
+    }
+    #matrix-name-input {
+      font-family: var(--font-family-h2);
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-h2);
+      color: var(--color-text);
+      padding: 2px 0;
+      line-height: var(--line-height-h2);
+    }
+    #matrix-desc-input {
+      font-family: var(--font-family-caption-md);
+      font-size: var(--font-size-caption-md);
+      font-weight: var(--font-weight-caption-md);
+      color: var(--color-text-muted);
+      padding: 2px 0; margin-top: 4px;
+      line-height: 1.5;
+      resize: none; overflow: hidden;
+    }
+    #matrix-name-input:focus { border-bottom-color: var(--color-accent); }
+    #matrix-desc-input:focus { border-bottom-color: var(--color-accent); color: var(--color-text); }
+
+    /* ── View mode: row description accordion ───────────────────────────────── */
+    .row-desc-toggle {
+      background: none; border: none; padding: 0;
+      font-size: .68rem; color: var(--color-text-muted);
+      cursor: pointer; display: block; margin-top: 2px;
+      text-decoration: underline; text-underline-offset: 2px;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+    .row-desc-toggle:hover { color: var(--color-text); }
+    .row-desc-text {
+      display: none;
+      font-size: .72rem;
+      color: var(--color-text-muted);
+      line-height: 1.4;
+      margin-top: 4px;
+      white-space: pre-wrap;
+    }
+    .row-desc-text.expanded { display: block; }
+
+    /* ── Questionnaire field rows ──────────────────────────────────────────────── */
+    .q-field-row {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+
+    .q-field-row__header {
+      display: grid;
+      grid-template-columns: 140px 1fr auto;
+      gap: 8px;
+      align-items: end;
+      margin-bottom: 8px;
+    }
+
+    .q-field-row__type {
+      font-size: .8rem;
+      padding: 6px 8px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      color: var(--color-text);
+      transition: border-color .12s;
+    }
+
+    .q-field-row__type:hover {
+      border-color: var(--color-accent);
+    }
+
+    .q-field-row__type:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    .q-field-row__name {
+      font-size: .8rem;
+      padding: 6px 8px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
+      transition: border-color .12s;
+    }
+
+    .q-field-row__name:hover {
+      border-color: var(--color-text-muted);
+    }
+
+    .q-field-row__name:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    .q-field-row__controls {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .q-field-row__btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: .8rem;
+      transition: background .12s, color .12s, border-color .12s;
+      line-height: 1;
+      padding: 0;
+      type: button;
+    }
+
+    .q-field-row__btn:hover:not(:disabled) {
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      border-color: var(--color-text-muted);
+    }
+
+    .q-field-row__btn--danger:hover:not(:disabled) {
+      background: var(--color-danger-bg);
+      color: var(--color-danger);
+      border-color: var(--color-danger);
+    }
+
+    .q-field-row__btn:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .q-field-row__options {
+      display: none;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--color-border);
+    }
+
+    .q-field-row__options--visible {
+      display: block;
+    }
+
+    .q-options-input-wrapper {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .q-option-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px 2px 10px;
+      background: none;
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      color: var(--color-text);
+    }
+
+    .q-option-pill-remove {
+      cursor: pointer;
+      color: var(--color-text-muted);
+      background: none;
+      border: none;
+      padding: 0;
+      font-weight: bold;
+      transition: color .12s;
+      font-size: 1em;
+      line-height: 1;
+      display: inline-block;
+    }
+
+    .q-option-pill-remove:hover {
+      color: var(--color-danger);
+    }
+
+    .q-options-input {
+      font-size: .8rem;
+      padding: 6px 8px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      width: 200px;
+      color: var(--color-text);
+      transition: border-color .12s;
+    }
+
+    .q-options-input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    .q-field-row__rate-config {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding-top: 8px;
+      border-top: 1px solid var(--color-border);
+      font-size: .8rem;
+    }
+
+    .q-field-row__rate-config label {
+      color: var(--color-text-muted);
+    }
+
+    .q-field-row__rate-input {
+      font-size: .8rem;
+      padding: 4px 8px;
+      width: 60px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      color: var(--color-text);
+    }
+
+    .q-field-row__rate-input:focus {
+      outline: none;
+      border-color: var(--color-accent);
+    }
+
+    /* ── Questionnaire name/description (match matrix style) ────────────────── */
+    #q-name-input {
+      font-family: var(--font-family-h2);
+      font-size: var(--font-size-h2);
+      font-weight: var(--font-weight-h2);
+      color: var(--color-text);
+      padding: 2px 0;
+      line-height: var(--line-height-h2);
+      resize: none; overflow: hidden;
+      border: none; border-bottom: 1px solid transparent;
+      width: 100%;
+      background: none;
+      outline: none;
+    }
+    #q-desc-input {
+      font-family: var(--font-family-caption-md);
+      font-size: var(--font-size-caption-md);
+      font-weight: var(--font-weight-caption-md);
+      color: var(--color-text-muted);
+      padding: 2px 0; margin-top: 4px;
+      line-height: 1.5;
+      resize: none; overflow: hidden;
+      width: 100%;
+      background: none;
+      border: none; border-bottom: 1px solid transparent;
+      outline: none;
+    }
+    #q-name-input:focus { border-bottom-color: var(--color-accent); }
+    #q-desc-input:focus { border-bottom-color: var(--color-accent); color: var(--color-text); }
+
+    /* ── Questionnaire view mode (form) ────────────────────────────────────── */
+    .q-view-form {
+      width: 100%;
+    }
+
+    .q-view-field {
+      margin-bottom: 20px;
+    }
+
+    .q-view-field__label {
+      display: block;
+      font-size: .9rem;
+      font-weight: 500;
+      color: var(--color-text);
+      margin-bottom: 6px;
+    }
+
+    .q-view-field__input {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: .85rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-family: inherit;
+    }
+
+    .q-view-field__input:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .q-view-field__select {
+      width: 100%;
+      padding: 8px 10px;
+      font-size: .85rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background: var(--color-surface);
+      color: var(--color-text);
+      font-family: inherit;
+    }
+
+    .q-view-field__select:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .q-view-field__rate {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .q-view-field__rate-option {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .q-view-field__rate-input {
+      cursor: not-allowed;
+    }
+
+    .q-view-field__rate-input:disabled {
+      opacity: 0.6;
+    }
+
+    .q-view-field__rate-btn {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      border-radius: var(--radius-sm);
+      font-size: 1.5rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color .12s, background .12s;
+    }
+
+    .q-view-field__rate-btn:hover:not(:disabled) {
+      border-color: var(--color-accent);
+      background: rgba(72, 118, 94, .05);
+    }
+
+    .q-view-field__rate-btn--selected {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+
+    .q-view-field__rate-btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+  </style>
+</head>
+<body data-page="artifact-builder">
+
+  <header class="app-header" id="app-header"></header>
+
+  <main class="app-main">
+
+    <!-- Edit mode / new artifact header -->
+    <div class="page-header" id="page-header-edit">
+      <a href="#" id="back-btn-edit" class="page-header__back">← Dashboard</a>
+      <h1 class="page-header__title" id="page-title">New artifact</h1>
+    </div>
+    <!-- View mode header: Dashboard link + name + Edit button on same line -->
+    <div id="page-header-view" style="display:none;margin-bottom:24px">
+      <a href="#" id="back-btn-view" class="page-header__back" style="display:inline-block;margin-bottom:10px">← Dashboard</a>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+        <div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h1 id="view-page-title" style="margin:0;font-size:1.5rem;font-weight:700;line-height:1.2"></h1>
+            <span class="module-card__label" id="view-type-label" style="margin-top:0;background:var(--color-border);color:var(--color-text);font-size:.7rem;padding:3px 10px"></span>
+          </div>
+          <p id="view-page-desc" style="margin:6px 0 0;font-size:.875rem;color:var(--color-text-muted);line-height:1.5;display:none;white-space:pre-wrap;word-break:break-word"></p>
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0;margin-top:4px">
+          <button class="btn btn--ghost btn--sm" onclick="FB.downloadArtifact()">Download</button>
+          <a class="btn btn--primary btn--sm" id="edit-artifact-btn" href="#">Edit</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Validation banner -->
+    <div id="validation-banner"></div>
+
+    <!-- Step 1 -->
+    <div id="step-1">
+
+      <!-- Step indicator -->
+      <div class="step-indicator">
+        <div class="step-indicator__item step-indicator__item--active">
+          <div class="step-indicator__num">1</div>
+          <div class="step-indicator__label">Basics</div>
+        </div>
+        <div class="step-indicator__sep"></div>
+        <div class="step-indicator__item" id="step2-indicator">
+          <div class="step-indicator__num">2</div>
+          <div class="step-indicator__label" id="step2-label">Matrix</div>
+        </div>
+      </div>
+
+      <!-- Single panel: Name + Model + Type + Settings -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="form-group">
+          <label class="form-label" for="fw-name">Name <span>*</span></label>
+          <input class="form-input" id="fw-name" type="text" maxlength="80"
+                 placeholder="Artifact name" autocomplete="off">
+          <div class="form-error" id="fw-name-err" style="display:none;margin-top:4px"></div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px">
+          <label class="form-label" for="fw-desc">Description <span style="font-weight:400;color:var(--color-text-muted)">(optional)</span></label>
+          <textarea class="form-input" id="fw-desc" rows="3" maxlength="500"
+                    placeholder="What is this artifact for? Who should use it?"
+                    style="resize:vertical;font-family:inherit"></textarea>
+        </div>
+
+        <div style="height:1px;background:var(--color-border);margin:20px 0"></div>
+
+        <!-- Level 1: Model selector -->
+        <div class="form-label" style="margin-bottom:12px">Model</div>
+        <div class="type-grid">
+          <button class="type-card type-card--active" data-model="matrix" onclick="FB.setModel('matrix')">
+            <div class="type-card__icon">🗂️</div>
+            <div class="type-card__name">Matrix</div>
+            <div class="type-card__desc">Evaluate skills with a scoring grid</div>
+          </button>
+          <button class="type-card" data-model="questionnaire" onclick="FB.setModel('questionnaire')">
+            <div class="type-card__icon">📝</div>
+            <div class="type-card__name">Questionnaire</div>
+            <div class="type-card__desc">Create a list of questions and fields</div>
+          </button>
+        </div>
+
+        <!-- Level 2: Matrix type selector (shown only when Matrix is selected) -->
+        <div id="matrix-type-selector" style="margin-top:16px">
+          <div class="form-label" style="margin-bottom:12px">Type</div>
+          <div class="type-grid">
+            <button class="type-card type-card--active" data-type="score" onclick="FB.setType('score')">
+              <div class="type-card__icon">📊</div>
+              <div class="type-card__name">Score</div>
+              <div class="type-card__desc">Rate each skill from 0 to N. Progressive fill — selecting level 3 means "up to level 3".</div>
+            </button>
+            <button class="type-card" data-type="scale" onclick="FB.setType('scale')">
+              <div class="type-card__icon">⚖️</div>
+              <div class="type-card__name">Scale</div>
+              <div class="type-card__desc">Bipolar spectrum from −N to +N. Each skill gets a single point between two opposite poles.</div>
+            </button>
+            <button class="type-card" data-type="selective" onclick="FB.setType('selective')">
+              <div class="type-card__icon">☑️</div>
+              <div class="type-card__name">Selective</div>
+              <div class="type-card__desc">A grid where any cell can be independently checked. Good for tool proficiency or skill-by-level maps.</div>
+            </button>
+          </div>
+
+          <!-- Type settings inline (rendered by JS) -->
+          <div id="type-settings"></div>
+        </div>
+      </div>
+
+      <!-- Step 1 toolbar -->
+      <div class="fb-toolbar">
+        <a href="index.html?from=artifacts" class="btn btn--ghost">Cancel</a>
+        <button class="btn btn--primary" onclick="FB.goToStep2()">Continue →</button>
+      </div>
+
+    </div><!-- /step-1 -->
+
+    <!-- Step 2 -->
+    <div id="step-2" style="display:none">
+
+      <!-- Table editor -->
+      <div class="card">
+        <!-- Name + description (edit mode only) -->
+        <div id="matrix-edit-name-row" style="margin-bottom:12px">
+          <input id="matrix-name-input" type="text" maxlength="80" placeholder="Artifact name"
+            oninput="FB.onMatrixName(this.value)">
+          <textarea id="matrix-desc-input" rows="1"
+            placeholder="Description (optional)"
+            oninput="FB.onMatrixDesc(this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        </div>
+
+        <div class="matrix-wrap">
+          <div id="matrix-container"></div>
+        </div>
+        <!-- Add buttons (hidden in view mode) -->
+        <div id="matrix-add-btns" style="display:flex;gap:8px;margin-top:12px">
+          <button class="add-row-btn" onclick="FB.addRow()">+ Add row</button>
+          <button class="add-row-btn" onclick="FB.addGroup()">+ Add group</button>
+        </div>
+      </div>
+
+      <!-- Edit mode toolbar -->
+      <div class="fb-toolbar" id="toolbar-save">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn--danger" id="delete-btn" style="display:none" onclick="FB.deleteArtifact()">Delete</button>
+        </div>
+        <button class="btn btn--primary" onclick="FB.save()">Save</button>
+      </div>
+
+    </div><!-- /step-2 -->
+
+    <!-- Step 2 — Questionnaire -->
+    <div id="step-2-q" style="display:none">
+      <!-- Field editor -->
+      <div class="card">
+        <!-- Name + description -->
+        <div id="q-edit-name-row" style="margin-bottom:12px">
+          <input id="q-name-input" type="text" maxlength="80" placeholder="Questionnaire name"
+            oninput="QB.onQuestionnaireName(this.value)">
+          <textarea id="q-desc-input" rows="1"
+            placeholder="Description (optional)"
+            oninput="QB.onQuestionnaireDesc(this.value);this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+        </div>
+
+        <!-- Fields container -->
+        <div id="q-fields-container" style="margin-bottom:16px"></div>
+
+        <!-- Add field button -->
+        <div style="margin-bottom:12px">
+          <button class="add-row-btn" onclick="QB.addField()">+ Add field</button>
+        </div>
+      </div>
+
+      <!-- Questionnaire toolbar -->
+      <div class="fb-toolbar" id="toolbar-save-q">
+        <div style="display:flex;gap:8px">
+          <button class="btn btn--danger" id="delete-btn-q" style="display:none" onclick="FB.deleteArtifact()">Delete</button>
+        </div>
+        <button class="btn btn--primary" onclick="QB.save()">Save</button>
+      </div>
+
+    </div><!-- /step-2-q -->
+
+  </main>
+
+  <footer class="app-footer" id="app-footer"></footer>
+  <div id="toast-container"></div>
+
+  <script src="validator.js"></script>
+  <script src="app.js"></script>
+  <script src="module-base.js"></script>
+  <script>
+  /* ═══════════════════════════════════════════════════════════════════════════
+     FRAMEWORK BUILDER — 2-step wizard
+     Step 1: name + type + type settings
+     Step 2: matrix table editor (name editable inline)
+
+     Data shape stored in setup.artifacts[]:
+     {
+       id:          "uuid",
+       name:        "string",
+       type:        "score" | "scale" | "selective",
+       scoreMax:    number,
+       scaleMax:    number,
+       columns:     [{ id, label, description }],
+       poles:       [{ id, label, description }],
+       groups: [
+         { id, label, rows: [{ id, label, description, values: {} }] }
+       ]
+     }
+  ═══════════════════════════════════════════════════════════════════════════ */
+
+  const FB = {
+    fw:       null,    // current artifact object (live-edited)
+    editId:   null,    // id if editing existing
+    viewMode: false,   // true when opened with ?view=1 — read-only
+    step:     1,
+
+    // Snapshot of step-1 config taken when entering step 2.
+    // Used to detect if the user changed type/settings on returning to step 1.
+    _step1Snapshot: null,
+
+    /* ── Init ─────────────────────────────────────────────────────────────── */
+    init() {
+      const params    = new URLSearchParams(location.search);
+      this.editId     = params.get('id');
+      this.viewMode   = params.get('view') === '1';
+
+      if (this.editId) {
+        const existing = (App.setup?.artifacts || []).find(f => f.id === this.editId);
+        if (existing) {
+          this.fw = JSON.parse(JSON.stringify(existing));
+          // Backward compatibility: existing artifacts without model field are treated as matrix
+          if (!this.fw.model) {
+            this.fw.model = 'matrix';
+          }
+          // Pre-fill step 1 (needed for snapshot even in view mode)
+          document.getElementById('fw-name').value = this.fw.name;
+          document.getElementById('fw-desc').value = this.fw.description || '';
+          // Update step indicator label
+          const step2Label = document.getElementById('step2-label');
+          if (step2Label) {
+            step2Label.textContent = this.fw.model === 'questionnaire' ? 'Questionnaire' : 'Matrix';
+          }
+          this._syncTypeCards();
+          this._renderTypeSettings();
+
+          if (this.viewMode) {
+            document.getElementById('page-title').textContent = this.fw.name || 'Artifact';
+            this._showStep(2);
+          } else {
+            document.getElementById('page-title').textContent = `Edit "${this.fw.name || 'artifact'}"`;
+
+            // Show appropriate delete button based on model
+            if (this.fw.model === 'questionnaire') {
+              const delBtn = document.getElementById('delete-btn-q');
+              if (delBtn) delBtn.style.display = '';
+            } else {
+              document.getElementById('delete-btn').style.display = '';
+            }
+            this._step1Snapshot = this._captureStep1();
+            this._showStep(2);
+          }
+        } else {
+          Toast.show('Artifact not found.', 'error');
+          window.location.href = 'index.html?from=artifacts';
+          return;
+        }
+      } else {
+        this.fw = this._defaultArtifact();
+        this._syncTypeCards();
+        this._renderTypeSettings();
+        // Update step indicator label for the default model
+        const step2Label = document.getElementById('step2-label');
+        if (step2Label) {
+          step2Label.textContent = this.fw.model === 'questionnaire' ? 'Questionnaire' : 'Matrix';
+        }
+        this._showStep(1);
+      }
+
+      // Set up back button navigation
+      const from = params.get('from') || 'artifacts';
+      const backUrl = from === 'artifacts' ? 'index.html?from=artifacts' : 'index.html';
+      const backBtnEdit = document.getElementById('back-btn-edit');
+      const backBtnView = document.getElementById('back-btn-view');
+      if (backBtnEdit) backBtnEdit.href = backUrl;
+      if (backBtnView) backBtnView.href = backUrl;
+    },
+
+    _defaultArtifact() {
+      return {
+        id:          App.uuid(),
+        name:        '',
+        description: '',
+        model:       'matrix',
+        type:        'score',
+        scoreMax:    5,
+        scaleMax:    3,
+        columns:     this._defaultColumns('score'),
+        poles: [
+          { id: App.uuid(), label: 'Analytical', description: '' },
+          { id: App.uuid(), label: 'Creative',   description: '' },
+        ],
+        groups: [
+          { id: App.uuid(), label: '', rows: [
+            { id: App.uuid(), label: '', poleRight: '', description: '', values: {} }
+          ]}
+        ],
+      };
+    },
+
+    _defaultColumns(type) {
+      if (type === 'score') {
+        // Default 5 columns, user can add/delete more
+        return Array.from({ length: 5 }, (_, i) => ({
+          id: App.uuid(), label: String(i + 1), description: ''
+        }));
+      }
+      if (type === 'scale') {
+        // Fixed -3 to +3 (skip 0)
+        const vals = [];
+        for (let i = -3; i <= 3; i++) {
+          if (i === 0) continue;
+          vals.push({ id: App.uuid(), label: String(i), description: '' });
+        }
+        return vals;
+      }
+      return [
+        { id: App.uuid(), label: 'Junior',  description: '' },
+        { id: App.uuid(), label: 'Mid',     description: '' },
+        { id: App.uuid(), label: 'Senior',  description: '' },
+      ];
+    },
+
+    /* ── Step navigation ─────────────────────────────────────────────────── */
+    _showStep(n) {
+      this.step = n;
+      document.getElementById('step-1').style.display = n === 1 ? '' : 'none';
+      const isQuest = this.fw.model === 'questionnaire';
+      document.getElementById('step-2').style.display = (n === 2 && !isQuest) ? '' : 'none';
+      document.getElementById('step-2-q').style.display = (n === 2 && isQuest) ? '' : 'none';
+
+      if (n === 2) {
+        if (isQuest) {
+          // Questionnaire mode
+          QB.init();
+        } else {
+          // Matrix mode
+          this._updateMatrixTitle();
+          this._renderMatrix();
+          if (this.viewMode) {
+            // Hide edit-mode chrome
+            document.getElementById('matrix-edit-name-row').style.display = 'none';
+            document.getElementById('matrix-add-btns').style.display      = 'none';
+            document.getElementById('toolbar-save').style.display         = 'none';
+            // Show view-mode page header
+            document.getElementById('page-header-edit').style.display     = 'none';
+            document.getElementById('page-header-view').style.display     = '';
+          } else {
+            if (!this._dndReady) {
+              this._initDnD(document.getElementById('matrix-container'));
+              this._dndReady = true;
+            }
+          }
+        }
+      }
+    },
+
+    // Snapshot of the settings that, if changed, require a table reset
+    _captureStep1() {
+      return JSON.stringify({ model: this.fw.model, type: this.fw.type });
+    },
+
+    /* ── Model switching ─────────────────────────────────────────────────── */
+    setModel(model) {
+      if (this.fw.model === model) return;
+      this.fw.model = model;
+      this._syncTypeCards();
+
+      // Update step 2 indicator label
+      const step2Label = document.getElementById('step2-label');
+      if (step2Label) {
+        step2Label.textContent = model === 'questionnaire' ? 'Questionnaire' : 'Matrix';
+      }
+
+      // Show/hide matrix type selector based on model
+      const typeSelector = document.getElementById('matrix-type-selector');
+      if (typeSelector) {
+        typeSelector.style.display = model === 'matrix' ? '' : 'none';
+      }
+
+      // If switching to matrix, ensure we have a valid type
+      if (model === 'matrix' && !this.fw.type) {
+        this.fw.type = 'score';
+        this._syncTypeCards();
+        this._renderTypeSettings();
+      }
+    },
+
+    /* ── Type switching ──────────────────────────────────────────────────── */
+    setType(type) {
+      if (this.fw.type === type) return;
+      this.fw.type    = type;
+      this.fw.columns = this._defaultColumns(type);
+      this._syncTypeCards();
+      this._renderTypeSettings();
+    },
+
+    _syncTypeCards() {
+      // Sync model cards
+      document.querySelectorAll('[data-model]').forEach(card => {
+        card.classList.toggle('type-card--active', card.dataset.model === this.fw.model);
+      });
+      // Sync matrix type cards
+      document.querySelectorAll('[data-type]').forEach(card => {
+        card.classList.toggle('type-card--active', card.dataset.type === this.fw.type);
+      });
+    },
+
+    /* ── Type settings panel ─────────────────────────────────────────────── */
+    _renderTypeSettings() {
+      // No settings needed — score defaults to 5 cols (add/delete in matrix),
+      // scale is fixed -3 to +3, selective has no settings.
+      document.getElementById('type-settings').innerHTML = '';
+    },
+
+    onScoreMaxChange(val) {
+      const n = Math.min(20, Math.max(1, parseInt(val) || 5));
+      this.fw.scoreMax = n;
+      this.fw.columns  = this._defaultColumns('score', n);
+    },
+
+    onScaleMaxChange(val) {
+      const n = Math.min(10, Math.max(1, parseInt(val) || 3));
+      this.fw.scaleMax = n;
+      const i1 = document.getElementById('scale-max');
+      const i2 = document.getElementById('scale-max2');
+      if (i1) i1.value = n;
+      if (i2) i2.value = n;
+      this.fw.columns = this._defaultColumns('scale', n);
+    },
+
+    onPoleChange(idx, val) {
+      this.fw.poles[idx].label = val;
+    },
+
+    /* ── Step 2 — name + description sync ───────────────────────────────── */
+    _updateMatrixTitle() {
+      const name = this.fw.name || '';
+      // Sync name input
+      const nameInput = document.getElementById('matrix-name-input');
+      if (nameInput && nameInput.value !== name) nameInput.value = name;
+      // Sync description textarea
+      const descInput = document.getElementById('matrix-desc-input');
+      if (descInput && descInput.value !== (this.fw.description || '')) {
+        descInput.value = this.fw.description || '';
+        descInput.style.height = 'auto';
+        descInput.style.height = descInput.scrollHeight + 'px';
+      }
+      if (this.viewMode) {
+        const displayName = name || 'Untitled artifact';
+        const vt = document.getElementById('view-page-title');
+        if (vt) vt.textContent = displayName;
+        const editBtn = document.getElementById('edit-artifact-btn');
+        if (editBtn) {
+          editBtn.href = `artifact-builder.html?id=${this.editId}&from=artifacts`;
+          editBtn.textContent = 'Edit';
+        }
+        const typeLabel = document.getElementById('view-type-label');
+        if (typeLabel && this.fw.type) {
+          typeLabel.textContent = this.fw.type;
+          typeLabel.style.display = '';
+        }
+        const descEl = document.getElementById('view-page-desc');
+        if (descEl && this.fw.description && this.fw.description.trim()) {
+          descEl.textContent = this.fw.description;
+          descEl.style.display = '';
+        }
+      }
+    },
+
+    /* ── Back to step 1: detect if table should reset ────────────────────── */
+    goToStep1() {
+      const hasContent = this.fw.groups.some(g =>
+        g.label.trim() || g.rows.length > 0
+      );
+      if (hasContent) {
+        if (!confirm('Going back may reset your matrix if you change the type or settings. Continue?')) return;
+      }
+      this._showStep(1);
+    },
+
+    // Override goToStep2 to check snapshot
+    goToStep2() {
+      const name = document.getElementById('fw-name').value.trim();
+      const errEl = document.getElementById('fw-name-err');
+      if (!name) {
+        errEl.textContent = 'Artifact name is required.';
+        errEl.style.display = '';
+        document.getElementById('fw-name').classList.add('form-input--error');
+        document.getElementById('fw-name').focus();
+        return;
+      }
+      errEl.style.display = 'none';
+      document.getElementById('fw-name').classList.remove('form-input--error');
+
+      this.fw.name = name;
+      this.fw.description = document.getElementById('fw-desc').value.trim();
+
+      // If type or score/scale settings changed since last time, reset the table
+      const current = this._captureStep1();
+      if (this._step1Snapshot && current !== this._step1Snapshot) {
+        this.fw.groups = [
+          { id: App.uuid(), label: '', rows: [
+            { id: App.uuid(), label: '', description: '', values: {} }
+          ]}
+        ];
+      }
+
+      this._step1Snapshot = current;
+      this._showStep(2);
+    },
+
+    /* ── Matrix render ───────────────────────────────────────────────────── */
+    _renderMatrix() {
+      const container = document.getElementById('matrix-container');
+      const cols      = this.fw.columns;
+      const type      = this.fw.type;
+      // Total columns: handle + label + data cols + action
+      const totalCols = cols.length + 3;
+
+      const vm = this.viewMode;
+      // In view mode the ghost handle/action cols are omitted entirely
+      // so the table uses full width. colspan offset differs accordingly.
+      const extraCols = vm ? 0 : 2; // handle + action
+
+      const isScale = type === 'scale';
+      let html = `<table class="matrix-table"><thead><tr>`;
+      if (!vm) html += `<th class="th-handle"></th>`;
+      // Label col header — for scale shows "← left pole" pinned to center-right
+      html += `<th class="th-label-col" style="${isScale ? 'position:relative' : ''}"><div class="col-head" style="min-height:48px"></div>
+        ${isScale ? `<span style="position:absolute;top:50%;right:8px;transform:translateY(-50%);font-size:.7rem;color:var(--color-text-muted);font-style:italic">← left pole</span>` : ''}
+      </th>`;
+      // Data cols
+      const canDeleteCol = !vm && (type === 'selective' || type === 'score');
+      const canAddCol    = !vm && (type === 'selective' || type === 'score');
+      cols.forEach((col, ci) => {
+        if (vm) {
+          html += `<th>
+            <div class="col-head" style="align-items:center;justify-content:center;text-align:center;padding:10px 6px">
+              <span style="font-weight:600;font-size:.8375rem;color:var(--color-text);display:block;text-align:center">${Utils.esc(col.label) || '—'}</span>
+            </div>
+          </th>`;
+        } else {
+          // score + scale labels are readonly; selective labels editable
+          const readonlyAttr = (type === 'score' || type === 'scale') ? 'readonly style="opacity:.5;cursor:default;text-align:center"' : 'style="text-align:center"';
+          html += `<th style="position:relative">
+            <div class="col-head" style="align-items:center;justify-content:center;text-align:center">
+              <input class="col-head__label" type="text" value="${Utils.esc(col.label)}"
+                     placeholder="Label"
+                     ${readonlyAttr}
+                     oninput="FB.onColLabel(${ci}, this.value)">
+            </div>
+            ${canDeleteCol ? `<button class="del-col-btn" onclick="FB.deleteColumn(${ci})" title="Delete column">✕</button>` : ''}
+          </th>`;
+        }
+      });
+      // Right pole header (scale type only)
+      if (isScale) {
+        html += `<th class="th-label-col th-right-pole" style="position:relative"><div class="col-head" style="min-height:48px"></div>
+          <span style="position:absolute;top:50%;left:8px;transform:translateY(-50%);font-size:.7rem;color:var(--color-text-muted);font-style:italic">right pole →</span>
+        </th>`;
+      }
+      // Ghost action col (edit mode only) — add col for score and selective
+      if (!vm) {
+        if (canAddCol) {
+          html += `<th class="th-action add-col-btn-cell">
+            <button class="add-col-btn" onclick="FB.addColumn()" title="Add column">+ col</button>
+          </th>`;
+        } else {
+          html += `<th class="th-action"></th>`;
+        }
+      }
+      html += `</tr></thead><tbody>`;
+
+      this.fw.groups.forEach((group, gi) => {
+        // ── Group header row ───────────────────────────────────────────────
+        const groupColspan = cols.length + 1 + (isScale ? 1 : 0); // label col + data cols + right pole (scale only)
+        if (vm) {
+          // Only render group header in view mode if it has a label
+          if (group.label && group.label.trim()) {
+            html += `<tr class="group-header-row" data-gi="${gi}">
+              <td class="group-cell" colspan="${groupColspan}">
+                <div class="group-header-inner">
+                  <span class="group-label-input" style="cursor:default">${Utils.esc(group.label)}</span>
+                </div>
+              </td>
+            </tr>`;
+          }
+        } else {
+          html += `<tr class="group-header-row" data-gi="${gi}" draggable="true">
+            <td class="td-handle">
+              <span class="drag-handle" title="Drag to reorder group">⠿</span>
+            </td>
+            <td class="group-cell" colspan="${groupColspan}">
+              <div class="group-header-inner">
+                <input class="group-label-input" type="text"
+                       placeholder="Group label (optional)"
+                       value="${Utils.esc(group.label)}"
+                       oninput="FB.onGroupLabel(${gi}, this.value)">
+              </div>
+            </td>
+            <td class="td-action">
+              <button class="del-group-btn" onclick="FB.deleteGroup(${gi})" title="Delete group">✕</button>
+            </td>
+          </tr>`;
+        }
+
+        // ── Skill rows ─────────────────────────────────────────────────────
+        group.rows.forEach((row, ri) => {
+          const draggable = vm ? '' : 'draggable="true"';
+          html += `<tr class="skill-row" data-gi="${gi}" data-ri="${ri}" ${draggable}>`;
+          if (!vm) html += `<td class="td-handle"><span class="drag-handle" title="Drag to reorder row">⠿</span></td>`;
+          html += `<td class="row-label-cell">`;
+
+          if (vm) {
+            if (isScale) {
+              // Scale view mode: multi-line label with "Show more" if long
+              const labelId = `label-${gi}-${ri}`;
+              const labelText = Utils.esc(row.label) || '';
+              html += `<div class="scale-label-text" id="${labelId}" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${labelText}</div>`;
+              // Only show "Show more" if text is likely to overflow (> ~60 chars as heuristic)
+              if (row.label && row.label.length > 60) {
+                html += `<button class="row-desc-toggle" onclick="FB.toggleScaleLabel('${labelId}', this)">Show more</button>`;
+              }
+            } else {
+              html += `<div class="row-label__name" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0">${Utils.esc(row.label) || ''}</div>`;
+              if (row.description && row.description.trim()) {
+                const descId = `desc-${gi}-${ri}`;
+                html += `<button class="row-desc-toggle" onclick="FB.toggleDesc('${descId}', this)">Show description</button>
+                         <span class="row-desc-text" id="${descId}">${Utils.esc(row.description)}</span>`;
+              }
+            }
+          } else {
+            const labelPlaceholder = isScale ? 'e.g. Rational' : 'Skill / item name…';
+            if (isScale) {
+              // Scale edit mode: label input only, no description textarea
+              html += `<input class="row-label__name" type="text" placeholder="${labelPlaceholder}"
+                         value="${Utils.esc(row.label)}"
+                         oninput="FB.onRowLabel(${gi}, ${ri}, this.value)">`;
+            } else {
+              html += `<input class="row-label__name" type="text" placeholder="${labelPlaceholder}"
+                         value="${Utils.esc(row.label)}"
+                         oninput="FB.onRowLabel(${gi}, ${ri}, this.value)">
+                       <textarea class="row-label__desc" placeholder="Description (optional)"
+                                 oninput="FB.onRowDesc(${gi}, ${ri}, this.value)">${Utils.esc(row.description)}</textarea>`;
+            }
+          }
+
+          html += `</td>`;
+
+          cols.forEach((col, ci) => {
+            const val = row.values[col.id];
+            if (type === 'score') {
+              const selectedIdx = this._getScoreIdx(row, cols);
+              const filled = selectedIdx !== null && ci <= selectedIdx;
+              html += `<td class="matrix-cell ${filled ? 'matrix-cell--filled-score' : ''} ${vm ? 'matrix-cell--readonly' : ''}"
+                           ${vm ? '' : `onclick="FB.onScoreClick(${gi}, ${ri}, ${ci})"`}></td>`;
+            } else if (type === 'scale') {
+              const colVal = parseInt(col.label);
+              const rowVal = row.values['__scale'] ?? null;
+              const isNeg  = colVal < 0, isPos = colVal > 0;
+              const filled = rowVal !== null && (
+                isNeg ? colVal >= rowVal && rowVal < 0 :
+                isPos ? colVal <= rowVal && rowVal > 0 : false
+              );
+              html += `<td class="matrix-cell ${isNeg ? 'matrix-cell--scale-neg' : 'matrix-cell--scale-pos'} ${filled ? 'matrix-cell--filled-score' : ''} ${vm ? 'matrix-cell--readonly' : ''}"
+                           ${vm ? '' : `onclick="FB.onScaleClick(${gi}, ${ri}, ${colVal})"`}></td>`;
+            } else {
+              html += `<td class="matrix-cell ${val === true ? 'matrix-cell--filled-selective' : ''} ${vm ? 'matrix-cell--readonly' : ''}"
+                           ${vm ? '' : `onclick="FB.onSelectiveClick(${gi}, ${ri}, '${col.id}')"`}>
+                         <div class="matrix-cell__dot"></div>
+                       </td>`;
+            }
+          });
+
+          // Right pole cell (scale type only)
+          if (isScale) {
+            html += `<td class="row-label-cell row-right-pole-cell">`;
+            if (vm) {
+              html += `<div class="row-label__name" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0">${Utils.esc(row.poleRight) || ''}</div>`;
+            } else {
+              html += `<input class="row-label__name" type="text" placeholder="e.g. Emotional"
+                         value="${Utils.esc(row.poleRight || '')}"
+                         oninput="FB.onPoleRight(${gi}, ${ri}, this.value)">`;
+            }
+            html += `</td>`;
+          }
+
+          if (!vm) html += `<td class="td-action"><button class="del-row-btn" onclick="FB.deleteRow(${gi}, ${ri})" title="Delete row">✕</button></td>`;
+          html += `</tr>`;
+        });
+
+        // Empty group placeholder (edit mode only)
+        if (!vm && group.rows.length === 0) {
+          html += `<tr class="skill-row" data-gi="${gi}" data-ri="-1">
+            <td class="td-handle"></td>
+            <td colspan="${cols.length + 1 + (isScale ? 1 : 0)}" style="border:1px solid var(--color-border);padding:10px 14px;color:var(--color-text-muted);font-size:.8rem;font-style:italic;background:var(--color-surface)">
+              No rows yet —
+              <button style="background:none;border:none;color:var(--color-accent);cursor:pointer;font-size:.8rem;padding:0;text-decoration:underline"
+                      onclick="FB.addRow(${gi})">add one</button>
+              or drag items here
+            </td>
+            <td class="td-action"></td>
+          </tr>`;
+        }
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+
+      // Update add-row button label based on type
+      const addRowBtn = document.querySelector('#matrix-add-btns .add-row-btn');
+      if (addRowBtn) addRowBtn.textContent = '+ Add row';
+    },
+
+    _getScoreIdx(row, cols) {
+      let maxIdx = null;
+      cols.forEach((col, ci) => { if (row.values[col.id]) maxIdx = ci; });
+      return maxIdx;
+    },
+
+    /* ── Cell interactions ───────────────────────────────────────────────── */
+    onScoreClick(gi, ri, ci) {
+      const row  = this.fw.groups[gi].rows[ri];
+      const cols = this.fw.columns;
+      const currentIdx = this._getScoreIdx(row, cols);
+      cols.forEach(col => { row.values[col.id] = false; });
+      if (currentIdx !== ci) {
+        for (let i = 0; i <= ci; i++) row.values[cols[i].id] = true;
+      }
+      this._renderMatrix();
+    },
+
+    onScaleClick(gi, ri, colVal) {
+      const row = this.fw.groups[gi].rows[ri];
+      row.values['__scale'] = row.values['__scale'] === colVal ? null : colVal;
+      this._renderMatrix();
+    },
+
+    onSelectiveClick(gi, ri, colId) {
+      const row = this.fw.groups[gi].rows[ri];
+      row.values[colId] = !row.values[colId];
+      this._renderMatrix();
+    },
+
+    /* ── Column/row/group edits ──────────────────────────────────────────── */
+    onColLabel(ci, val)         { this.fw.columns[ci].label = val; },
+    onColDesc(ci, val)          { this.fw.columns[ci].description = val; },
+    onRowLabel(gi, ri, val)     { this.fw.groups[gi].rows[ri].label = val; },
+    onRowDesc(gi, ri, val)      { this.fw.groups[gi].rows[ri].description = val; },
+    onPoleRight(gi, ri, val)    { this.fw.groups[gi].rows[ri].poleRight = val; },
+    onMatrixName(val)           { this.fw.name = val; document.getElementById('fw-name').value = val; },
+    onMatrixDesc(val)           { this.fw.description = val; },
+    onGroupLabel(gi, val)       { this.fw.groups[gi].label = val; },
+
+    /* ── View mode: description accordion ───────────────────────────────── */
+    toggleDesc(id, btn) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const expanded = el.classList.toggle('expanded');
+      btn.textContent = expanded ? 'Hide description' : 'Show description';
+    },
+
+    toggleScaleLabel(id, btn) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const collapsed = el.style.whiteSpace === 'nowrap';
+      if (collapsed) {
+        el.style.whiteSpace = 'normal';
+        el.style.overflow = 'visible';
+        el.style.textOverflow = 'clip';
+        btn.textContent = 'Show less';
+      } else {
+        el.style.whiteSpace = 'nowrap';
+        el.style.overflow = 'hidden';
+        el.style.textOverflow = 'ellipsis';
+        btn.textContent = 'Show more';
+      }
+    },
+
+    /* ── Add/delete ──────────────────────────────────────────────────────── */
+    addRow(gi) {
+      const groupIdx = gi !== undefined ? gi : this.fw.groups.length - 1;
+      this.fw.groups[groupIdx].rows.push({
+        id: App.uuid(), label: '', poleRight: '', description: '', values: {}
+      });
+      this._renderMatrix();
+      setTimeout(() => {
+        const inputs = document.querySelectorAll('.row-label__name');
+        inputs[inputs.length - 1]?.focus();
+      }, 50);
+    },
+
+    addGroup() {
+      this.fw.groups.push({ id: App.uuid(), label: '', rows: [] });
+      this._renderMatrix();
+    },
+
+    addColumn() {
+      // Score columns are auto-numbered; selective columns get empty label
+      const label = this.fw.type === 'score' ? String(this.fw.columns.length + 1) : '';
+      this.fw.columns.push({ id: App.uuid(), label, description: '' });
+      this._renderMatrix();
+    },
+
+    deleteRow(gi, ri) {
+      this.fw.groups[gi].rows.splice(ri, 1);
+      this._renderMatrix();
+    },
+
+    deleteGroup(gi) {
+      if (this.fw.groups.length === 1) {
+        Toast.show('At least one group is required.', 'warning'); return;
+      }
+      this.fw.groups.splice(gi, 1);
+      this._renderMatrix();
+    },
+
+    deleteColumn(ci) {
+      if (this.fw.columns.length <= 1) {
+        Toast.show('At least one column is required.', 'warning'); return;
+      }
+      const col = this.fw.columns[ci];
+      this.fw.columns.splice(ci, 1);
+      this.fw.groups.forEach(g => g.rows.forEach(r => delete r.values[col.id]));
+      this._renderMatrix();
+    },
+
+    /* ── Drag-and-drop ───────────────────────────────────────────────────── */
+    _initDnD(container) {
+      let dragType = null, dragGi = null, dragRi = null, overEl = null;
+
+      const clearIndicators = () => {
+        container.querySelectorAll('tr').forEach(r =>
+          r.classList.remove('drag-over-top', 'drag-over-bottom', 'dragging-row', 'dragging-group'));
+      };
+
+      container.addEventListener('dragstart', e => {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          e.preventDefault(); return;
+        }
+        const groupRow = e.target.closest('tr.group-header-row');
+        const skillRow = e.target.closest('tr.skill-row');
+        if (groupRow) {
+          dragType = 'group';
+          dragGi   = parseInt(groupRow.dataset.gi);
+          groupRow.classList.add('dragging-group');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', 'group');
+        } else if (skillRow && parseInt(skillRow.dataset.ri) >= 0) {
+          dragType = 'row';
+          dragGi   = parseInt(skillRow.dataset.gi);
+          dragRi   = parseInt(skillRow.dataset.ri);
+          skillRow.classList.add('dragging-row');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', 'row');
+        } else {
+          e.preventDefault();
+        }
+      });
+
+      container.addEventListener('dragover', e => {
+        if (!dragType) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        const groupRow = e.target.closest('tr.group-header-row');
+        const skillRow = e.target.closest('tr.skill-row');
+        const target   = groupRow || skillRow;
+        if (!target || target === overEl) return;
+        clearIndicators();
+        overEl = target;
+        const rect  = target.getBoundingClientRect();
+        target.classList.add(e.clientY < rect.top + rect.height / 2 ? 'drag-over-top' : 'drag-over-bottom');
+      });
+
+      container.addEventListener('dragleave', e => {
+        if (!e.currentTarget.contains(e.relatedTarget)) { clearIndicators(); overEl = null; }
+      });
+
+      container.addEventListener('dragend', () => {
+        clearIndicators(); overEl = null; dragType = null; dragGi = null; dragRi = null;
+      });
+
+      container.addEventListener('drop', e => {
+        e.preventDefault();
+        const groupRow = e.target.closest('tr.group-header-row');
+        const skillRow = e.target.closest('tr.skill-row');
+        const target   = groupRow || skillRow;
+        if (!target || !dragType) { clearIndicators(); return; }
+        const rect  = target.getBoundingClientRect();
+        const isTop = e.clientY < rect.top + rect.height / 2;
+        if (dragType === 'group') this._dropGroup(dragGi, target, isTop);
+        else if (dragType === 'row') this._dropRow(dragGi, dragRi, target, isTop);
+        clearIndicators(); dragType = null; dragGi = null; dragRi = null; overEl = null;
+      });
+    },
+
+    _dropGroup(srcGi, target, isTop) {
+      const destGi = parseInt(target.dataset.gi);
+      if (isNaN(destGi) || destGi === srcGi) return;
+      const groups  = this.fw.groups;
+      const [moved] = groups.splice(srcGi, 1);
+      let idx = destGi;
+      if (srcGi < destGi) idx -= 1;
+      if (!isTop) idx += 1;
+      idx = Math.max(0, Math.min(groups.length, idx));
+      groups.splice(idx, 0, moved);
+      this._renderMatrix();
+    },
+
+    _dropRow(srcGi, srcRi, target, isTop) {
+      let destGi = parseInt(target.dataset.gi);
+      let destRi = parseInt(target.dataset.ri);
+      if (isNaN(destGi)) return;
+
+      // Dropped on group header row → prepend to that group
+      if (target.classList.contains('group-header-row') || destRi < 0) {
+        destRi = 0; isTop = true;
+      }
+
+      const srcGroup = this.fw.groups[srcGi];
+      const [moved]  = srcGroup.rows.splice(srcRi, 1);
+
+      const dg = this.fw.groups[destGi];
+      let idx  = isTop ? destRi : destRi + 1;
+      if (srcGi === destGi && srcRi < destRi) idx -= 1;
+      idx = Math.max(0, Math.min(dg.rows.length, idx));
+      dg.rows.splice(idx, 0, moved);
+      this._renderMatrix();
+    },
+
+    /* ── Save ────────────────────────────────────────────────────────────── */
+    save() {
+      this.fw.updatedAt = new Date().toISOString();
+      const artifacts = App.setup.artifacts || [];
+      const idx = artifacts.findIndex(f => f.id === this.fw.id);
+      if (idx >= 0) {
+        artifacts[idx] = this.fw;
+      } else {
+        this.fw.createdAt = new Date().toISOString();
+        artifacts.push(this.fw);
+      }
+      App.setup.artifacts = artifacts;
+      if (!ModuleBase.safeSave(App.setup)) return;
+      Toast.show('✅ Artifact saved.', 'success');
+      setTimeout(() => { window.location.href = `artifact-builder.html?id=${this.fw.id}&view=1&from=artifacts`; }, 600);
+    },
+
+    deleteArtifact() {
+      if (!confirm(`Delete "${this.fw.name}"? This cannot be undone.`)) return;
+      App.setup.artifacts = (App.setup.artifacts || []).filter(f => f.id !== this.fw.id);
+      ModuleBase.safeSave(App.setup);
+      Toast.show('Artifact deleted.', 'default');
+      window.location.href = 'index.html?from=artifacts';
+    },
+
+    downloadArtifact() {
+      const fw   = this.fw;
+      const blob = new Blob([JSON.stringify(fw, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url;
+      a.download = `${(fw.name || 'artifact').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_artifact.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      Toast.show(`"${fw.name}" downloaded.`, 'success');
+    },
+  };
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     QUESTIONNAIRE BUILDER (QB) — Field editor for questionnaire artifacts
+     ═══════════════════════════════════════════════════════════════════════════ */
+
+  const QB = {
+    /* ── Init ─────────────────────────────────────────────────────────────── */
+    init() {
+      // Initialize the questionnaire editor if not already done
+      if (!FB.fw.fields) {
+        FB.fw.fields = [];
+      }
+      this._updateQuestionnaireTitle();
+
+      if (FB.viewMode) {
+        this.renderViewMode();
+        document.getElementById('q-edit-name-row').style.display = 'none';
+        document.querySelector('#step-2-q .add-row-btn').style.display = 'none';
+        document.getElementById('toolbar-save-q').style.display = 'none';
+        document.getElementById('page-header-edit').style.display = 'none';
+        document.getElementById('page-header-view').style.display = '';
+      } else {
+        this.renderFields();
+      }
+    },
+
+    _updateQuestionnaireTitle() {
+      const name = FB.fw.name || '';
+      const nameInput = document.getElementById('q-name-input');
+      if (nameInput && nameInput.value !== name) nameInput.value = name;
+
+      const descInput = document.getElementById('q-desc-input');
+      if (descInput && descInput.value !== (FB.fw.description || '')) {
+        descInput.value = FB.fw.description || '';
+        descInput.style.height = 'auto';
+        descInput.style.height = descInput.scrollHeight + 'px';
+      }
+
+      if (FB.viewMode) {
+        const displayName = name || 'Untitled questionnaire';
+        const vt = document.getElementById('view-page-title');
+        if (vt) vt.textContent = displayName;
+        const editBtn = document.getElementById('edit-artifact-btn');
+        if (editBtn) {
+          editBtn.href = `artifact-builder.html?id=${FB.editId}&from=artifacts`;
+          editBtn.textContent = 'Edit';
+        }
+        const typeLabel = document.getElementById('view-type-label');
+        if (typeLabel) {
+          typeLabel.textContent = 'questionnaire';
+          typeLabel.style.display = '';
+        }
+        const descEl = document.getElementById('view-page-desc');
+        if (descEl && FB.fw.description && FB.fw.description.trim()) {
+          descEl.textContent = FB.fw.description;
+          descEl.style.display = '';
+        }
+      }
+    },
+
+    /* ── View mode (form display) ─────────────────────────────────────────── */
+    renderViewMode() {
+      const container = document.getElementById('q-fields-container');
+      if (!container) return;
+
+      const fields = FB.fw.fields || [];
+      let html = '<div class="q-view-form">';
+
+      const typeLabels = {
+        text: 'Text',
+        date: 'Date',
+        select: 'Select',
+        multiselect: 'Multi-select',
+        rate: 'Rate'
+      };
+
+      fields.forEach((field) => {
+        html += `<div class="q-view-field">`;
+        html += `<label class="q-view-field__label">${Utils.esc(field.name)} <span style="color:var(--color-text-muted);font-weight:400;font-size:.85rem">(${typeLabels[field.type] || field.type})</span></label>`;
+
+        switch (field.type) {
+          case 'text':
+            html += `<input type="text" class="q-view-field__input" disabled>`;
+            break;
+          case 'date':
+            html += `<input type="date" class="q-view-field__input" disabled>`;
+            break;
+          case 'select':
+          case 'multiselect':
+            const isMulti = field.type === 'multiselect';
+            const options = field.options || [];
+
+            // Show as multi-select box for both select and multiselect
+            html += `<select class="q-view-field__select" ${isMulti ? 'multiple' : 'size="' + Math.min(options.length + 1, 5) + '"'} disabled>`;
+            options.forEach(opt => {
+              html += `<option value="${Utils.esc(opt)}">${Utils.esc(opt)}</option>`;
+            });
+            html += `</select>`;
+            break;
+          case 'rate':
+            const rateMax = field.rateMax || 5;
+            html += `<div class="q-view-field__rate" data-rate-max="${rateMax}" data-rate-value="0">`;
+            for (let i = 1; i <= rateMax; i++) {
+              html += `<button class="q-view-field__rate-btn" type="button" disabled>⭐</button>`;
+            }
+            html += `</div>`;
+            break;
+        }
+
+        html += `</div>`;
+      });
+
+      html += '</div>';
+      container.innerHTML = html;
+    },
+
+    /* ── Name/Desc updates ────────────────────────────────────────────────── */
+    onQuestionnaireName(val) {
+      FB.fw.name = val.trim();
+    },
+
+    onQuestionnaireDesc(val) {
+      FB.fw.description = val.trim();
+    },
+
+    /* ── Field management ─────────────────────────────────────────────────── */
+    addField() {
+      const field = {
+        id: App.uuid(),
+        name: '',
+        type: 'text',
+        options: []
+      };
+      FB.fw.fields.push(field);
+      this.renderFields();
+    },
+
+    removeField(idx) {
+      FB.fw.fields.splice(idx, 1);
+      this.renderFields();
+    },
+
+    onFieldType(idx, type) {
+      FB.fw.fields[idx].type = type;
+      // Initialize options/rateMax based on type
+      if (type === 'select' || type === 'multiselect') {
+        FB.fw.fields[idx].options = FB.fw.fields[idx].options || [];
+      } else if (type === 'rate') {
+        FB.fw.fields[idx].rateMax = FB.fw.fields[idx].rateMax || 5;
+        FB.fw.fields[idx].options = undefined;
+      } else {
+        FB.fw.fields[idx].options = [];
+      }
+      this.renderFields();
+    },
+
+    onFieldName(idx, val) {
+      FB.fw.fields[idx].name = val.trim();
+    },
+
+    onAddOption(idx, val) {
+      const trimmed = val.trim();
+      if (trimmed && !FB.fw.fields[idx].options.includes(trimmed)) {
+        FB.fw.fields[idx].options.push(trimmed);
+        this.renderFields();
+      }
+    },
+
+    onRateMax(idx, val) {
+      const n = Math.max(2, Math.min(10, parseInt(val) || 5));
+      FB.fw.fields[idx].rateMax = n;
+    },
+
+    removeFieldOption(idx, optIdx) {
+      FB.fw.fields[idx].options.splice(optIdx, 1);
+      this.renderFields();
+    },
+
+    moveFieldUp(idx) {
+      if (idx > 0) {
+        const temp = FB.fw.fields[idx];
+        FB.fw.fields[idx] = FB.fw.fields[idx - 1];
+        FB.fw.fields[idx - 1] = temp;
+        this.renderFields();
+      }
+    },
+
+    moveFieldDown(idx) {
+      if (idx < FB.fw.fields.length - 1) {
+        const temp = FB.fw.fields[idx];
+        FB.fw.fields[idx] = FB.fw.fields[idx + 1];
+        FB.fw.fields[idx + 1] = temp;
+        this.renderFields();
+      }
+    },
+
+    /* ── Rendering ────────────────────────────────────────────────────────── */
+    renderFields() {
+      const container = document.getElementById('q-fields-container');
+      if (!container) return;
+
+      const fields = FB.fw.fields || [];
+      container.innerHTML = '';
+
+      fields.forEach((field, idx) => {
+        const showOptions = field.type === 'select' || field.type === 'multiselect';
+        const showRate = field.type === 'rate';
+        const options = field.options || [];
+        const rateMax = field.rateMax || 5;
+
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:12px;background:var(--color-surface-alt);border:1px solid var(--color-border);border-radius:6px;padding:12px;';
+
+        // Type field
+        const typeDiv = document.createElement('div');
+        typeDiv.style.cssText = 'flex:0 0 100px;';
+        const typeLabel = document.createElement('label');
+        typeLabel.className = 'form-label';
+        typeLabel.style.fontSize = '.7rem';
+        typeLabel.textContent = 'Type';
+        const typeSelect = document.createElement('select');
+        typeSelect.className = 'form-input q-field-row__type';
+        typeSelect.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+        ['text', 'date', 'select', 'multiselect', 'rate'].forEach(type => {
+          const opt = document.createElement('option');
+          opt.value = type;
+          opt.textContent = type.charAt(0).toUpperCase() + type.slice(1);
+          if (field.type === type) opt.selected = true;
+          typeSelect.appendChild(opt);
+        });
+        typeSelect.addEventListener('change', e => {
+          field.type = e.target.value;
+          QB.renderFields();
+        });
+        typeDiv.appendChild(typeLabel);
+        typeDiv.appendChild(typeSelect);
+        row.appendChild(typeDiv);
+
+        // Question field
+        const questionDiv = document.createElement('div');
+        questionDiv.style.cssText = 'flex:1;';
+        const questionLabel = document.createElement('label');
+        questionLabel.className = 'form-label';
+        questionLabel.style.fontSize = '.7rem';
+        questionLabel.textContent = 'Question';
+        const questionInput = document.createElement('input');
+        questionInput.type = 'text';
+        questionInput.className = 'form-input';
+        questionInput.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+        questionInput.placeholder = 'Your question';
+        questionInput.value = field.name;
+        questionInput.addEventListener('input', e => {
+          field.name = e.target.value;
+        });
+        questionDiv.appendChild(questionLabel);
+        questionDiv.appendChild(questionInput);
+        row.appendChild(questionDiv);
+
+        // Options field (for Select/Multi-select)
+        if (showOptions) {
+          const optionsDiv = document.createElement('div');
+          optionsDiv.style.cssText = 'flex:0 0 200px;';
+          const optionsLabel = document.createElement('label');
+          optionsLabel.className = 'form-label';
+          optionsLabel.style.fontSize = '.7rem';
+          optionsLabel.textContent = 'Options';
+
+          const optionsInput = document.createElement('input');
+          optionsInput.type = 'text';
+          optionsInput.className = 'form-input q-options-input';
+          optionsInput.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+          optionsInput.placeholder = 'Add option...';
+          optionsInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              QB.onAddOption(idx, optionsInput.value);
+              optionsInput.value = '';
+              optionsInput.focus();
+            }
+          });
+          optionsInput.addEventListener('change', e => {
+            QB.onAddOption(idx, optionsInput.value);
+            optionsInput.value = '';
+          });
+
+          optionsDiv.appendChild(optionsLabel);
+          optionsDiv.appendChild(optionsInput);
+          row.appendChild(optionsDiv);
+        }
+
+        // Rate points field (for Rate type)
+        if (showRate) {
+          const rateDiv = document.createElement('div');
+          rateDiv.style.cssText = 'flex:0 0 120px;';
+          const rateLabel = document.createElement('label');
+          rateLabel.className = 'form-label';
+          rateLabel.style.fontSize = '.7rem';
+          rateLabel.textContent = 'Rate points';
+          const rateInput = document.createElement('input');
+          rateInput.type = 'number';
+          rateInput.className = 'form-input q-field-row__rate-input';
+          rateInput.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+          rateInput.min = '2';
+          rateInput.max = '10';
+          rateInput.value = rateMax;
+          rateInput.addEventListener('change', e => {
+            QB.onRateMax(idx, e.target.value);
+          });
+          rateDiv.appendChild(rateLabel);
+          rateDiv.appendChild(rateInput);
+          row.appendChild(rateDiv);
+        }
+
+        // Control buttons
+        const ctrlDiv = document.createElement('div');
+        ctrlDiv.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
+
+        const upBtn = document.createElement('button');
+        upBtn.className = 'q-field-row__btn';
+        upBtn.textContent = '⬆️';
+        upBtn.title = 'Move up';
+        upBtn.type = 'button';
+        upBtn.disabled = idx === 0;
+        upBtn.addEventListener('click', () => QB.moveFieldUp(idx));
+        ctrlDiv.appendChild(upBtn);
+
+        const downBtn = document.createElement('button');
+        downBtn.className = 'q-field-row__btn';
+        downBtn.textContent = '⬇️';
+        downBtn.title = 'Move down';
+        downBtn.type = 'button';
+        downBtn.disabled = idx === fields.length - 1;
+        downBtn.addEventListener('click', () => QB.moveFieldDown(idx));
+        ctrlDiv.appendChild(downBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'q-field-row__btn q-field-row__btn--danger';
+        delBtn.textContent = '🗑';
+        delBtn.title = 'Delete field';
+        delBtn.type = 'button';
+        delBtn.addEventListener('click', () => QB.removeField(idx));
+        ctrlDiv.appendChild(delBtn);
+
+        row.appendChild(ctrlDiv);
+
+        // Pills container (below all inputs, after buttons)
+        if (showOptions && options.length > 0) {
+          const pillsContainer = document.createElement('div');
+          pillsContainer.style.cssText = 'flex-basis:100%;display:flex;flex-wrap:wrap;gap:6px;padding-top:6px;border-top:1px solid var(--color-border);margin-top:6px;';
+
+          options.forEach((opt, optIdx) => {
+            const pill = document.createElement('div');
+            pill.className = 'q-option-pill';
+            pill.innerHTML = `<span>${Utils.esc(opt)}</span><button type="button" class="q-option-pill-remove" onclick="QB.removeFieldOption(${idx}, ${optIdx})" title="Remove option">✕</button>`;
+            pillsContainer.appendChild(pill);
+          });
+
+          row.appendChild(pillsContainer);
+        }
+
+        container.appendChild(row);
+      });
+    },
+
+    /* ── Save ─────────────────────────────────────────────────────────────── */
+    save() {
+      const name = document.getElementById('q-name-input').value.trim();
+      if (!name) {
+        Toast.show('Questionnaire name is required.', 'error');
+        document.getElementById('q-name-input').focus();
+        return;
+      }
+
+      FB.fw.name = name;
+      FB.fw.description = document.getElementById('q-desc-input').value.trim();
+      FB.fw.updatedAt = new Date().toISOString();
+
+      const artifacts = App.setup.artifacts || [];
+      const idx = artifacts.findIndex(f => f.id === FB.fw.id);
+      if (idx >= 0) {
+        artifacts[idx] = FB.fw;
+      } else {
+        FB.fw.createdAt = new Date().toISOString();
+        artifacts.push(FB.fw);
+      }
+      App.setup.artifacts = artifacts;
+
+      if (!ModuleBase.safeSave(App.setup)) return;
+      Toast.show('✅ Questionnaire saved.', 'success');
+      setTimeout(() => { window.location.href = `artifact-builder.html?id=${FB.fw.id}&view=1&from=artifacts`; }, 600);
+    }
+  };
+
+  Pages['artifact-builder'] = {
+    init() {
+      const raw = App.loadFromStorage();
+      if (!raw) { window.location.href = 'index.html'; return; }
+      App.setup = raw;
+      App._applyTheme();
+      App._renderHeader();
+      App._renderFooter();
+      FB.init();
+    }
+  };
+  </script>
+</body>
+</html>

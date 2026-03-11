@@ -1,0 +1,2053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crew Member - CrewKit</title>
+  <link rel="stylesheet" href="typography-tokens.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Modal (reused for framework duplicate confirm) */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 1000;
+      display: none;
+      align-items: flex-start;
+      justify-content: center;
+      overflow-y: auto;
+      padding: 40px 16px;
+    }
+
+    .modal-backdrop--visible {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--color-surface);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 680px;
+      padding: 32px;
+    }
+
+    .modal__title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--color-text);
+    }
+
+    .modal__subtitle {
+      font-size: 0.875rem;
+      color: var(--color-text-muted);
+      margin-bottom: 24px;
+    }
+
+    .modal__body {
+      margin-bottom: 24px;
+    }
+
+    .modal__actions {
+      display: flex;
+      gap: 12px;
+      justify-content: flex-end;
+      margin-top: 32px;
+    }
+
+    /* Member field row (create/edit) */
+    .member-field-row {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+    }
+
+    .member-field-row__header {
+      display: grid;
+      grid-template-columns: 1fr 120px auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .member-field-row__controls {
+      display: flex;
+      gap: 4px;
+      align-items: flex-end;
+      justify-content: flex-end;
+    }
+
+    .member-field-row__value {
+      margin-top: 10px;
+    }
+
+    /* Tags/labels widget */
+    .tags-input-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tags-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px 2px 10px;
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      font-size: 0.82rem;
+      color: var(--color-text);
+    }
+
+    .tag-pill-remove {
+      cursor: pointer;
+      color: var(--color-text-muted);
+      font-weight: bold;
+      padding: 0 2px;
+    }
+
+    .tag-pill-remove:hover {
+      color: var(--color-text);
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 24px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      padding: 12px 16px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--color-text-muted);
+      font-size: 0.95rem;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: all 0.15s ease;
+    }
+
+    .tab-btn:hover {
+      color: var(--color-text);
+    }
+
+    .tab-btn--active {
+      color: var(--color-accent);
+      border-bottom-color: var(--color-accent);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel--active {
+      display: block;
+    }
+
+    /* Notes and change log */
+    .notes-list,
+    .changelog-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .note-card {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .changelog-entry {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .note-card__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .note-card__title {
+      font-weight: 600;
+      color: var(--color-text);
+    }
+
+    .note-card__meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .note-card__date {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .note-card__del,
+    .note-card__edit {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm, 4px);
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text-muted);
+      cursor: pointer;
+      font-size: .8rem;
+      line-height: 1;
+      transition: background .12s, color .12s, border-color .12s;
+    }
+
+    .note-card__edit:hover {
+      background: var(--color-surface-alt);
+      color: var(--color-text);
+      border-color: var(--color-text-muted);
+    }
+
+    .note-card__del:hover {
+      background: var(--color-danger-bg, #fee2e2);
+      color: var(--color-danger, #dc2626);
+      border-color: var(--color-danger, #dc2626);
+    }
+
+    .note-card__del:disabled,
+    .note-card__edit:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+
+    .note-card--editing {
+      background: #ffffff;
+    }
+
+    .notes-add-form--disabled {
+      opacity: 0.45;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    .note-card__text {
+      color: var(--color-text);
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .changelog-entry__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .changelog-entry__left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .changelog-entry__meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+    .changelog-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .changelog-badge--auto {
+      background: var(--color-accent);
+      color: white;
+    }
+
+    .changelog-badge--manual {
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      color: var(--color-text);
+    }
+
+    .changelog-entry__date {
+      font-size: 0.82rem;
+      color: var(--color-text-muted);
+    }
+
+    .changelog-entry__text {
+      color: var(--color-text);
+      line-height: 1.5;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .changelog-entry--editing {
+      background: #ffffff;
+    }
+
+    /* Empty states */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--color-text-muted);
+    }
+
+    .empty-state__icon {
+      font-size: 2rem;
+      margin-bottom: 12px;
+    }
+
+    .empty-state__title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--color-text);
+    }
+
+    /* Accordion framework cards */
+    .fw-accordion {
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 12px;
+      background: var(--color-surface);
+    }
+
+    .fw-accordion__header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      user-select: none;
+      background: var(--color-surface);
+      border: none;
+      width: 100%;
+      text-align: left;
+      transition: background 0.15s ease;
+    }
+
+    .fw-accordion__header:hover {
+      background: var(--color-surface-alt);
+    }
+
+    .fw-accordion__chevron {
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .fw-accordion--open .fw-accordion__chevron {
+      transform: rotate(90deg);
+    }
+
+    .fw-accordion__title {
+      font-weight: 600;
+      color: var(--color-text);
+      flex: 1;
+      font-size: 0.9375rem;
+    }
+
+    .fw-accordion__actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .fw-accordion__body {
+      display: none;
+      border-top: 1px solid var(--color-border);
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .fw-accordion--open .fw-accordion__body {
+      display: block;
+    }
+
+    /* Framework matrix table */
+    .fw-matrix-table {
+      border-collapse: collapse;
+      width: 100%;
+      min-width: 500px;
+      font-size: .8375rem;
+    }
+
+    .fw-matrix-table thead th {
+      background: var(--color-surface-alt);
+      border: 1px solid var(--color-border);
+      padding: 0;
+      vertical-align: middle;
+      min-width: 80px;
+      width: 80px;
+    }
+
+    .fw-matrix-table thead th.fw-th-label {
+      min-width: 220px;
+      width: 220px;
+      text-align: left;
+    }
+
+    .fw-matrix-table thead th.fw-th-right-pole {
+      min-width: 160px;
+      width: 160px;
+    }
+
+    .fw-col-head {
+      padding: 8px 6px;
+      font-weight: 600;
+      font-size: .8375rem;
+      color: var(--color-text);
+      text-align: center;
+    }
+
+    .fw-group-row td {
+      background: var(--color-surface-alt);
+      border-top: 1px solid var(--color-border);
+      border-bottom: 1px solid var(--color-border);
+      padding: 7px 10px;
+      font-weight: 600;
+      font-size: .8125rem;
+      color: var(--color-text-muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .fw-skill-row td {
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .fw-label-cell {
+      border: 1px solid var(--color-border);
+      padding: 8px 10px;
+      vertical-align: top;
+      background: var(--color-surface);
+    }
+
+    .fw-label-name {
+      font-weight: 500;
+      font-size: .8375rem;
+      color: var(--color-text);
+      display: block;
+    }
+
+    .fw-label-desc {
+      font-size: .72rem;
+      color: var(--color-text-muted);
+      margin-top: 4px;
+      display: none;
+      line-height: 1.4;
+      white-space: pre-wrap;
+    }
+
+    .fw-label-desc.expanded {
+      display: block;
+    }
+
+    .fw-desc-toggle {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: .68rem;
+      color: var(--color-text-muted);
+      cursor: pointer;
+      display: block;
+      margin-top: 2px;
+      text-decoration: underline;
+      text-underline-offset: 2px;
+      white-space: nowrap;
+      line-height: 1.4;
+    }
+
+    .fw-desc-toggle:hover {
+      color: var(--color-text);
+    }
+
+    .fw-matrix-cell {
+      border: 1px solid var(--color-border);
+      text-align: center;
+      vertical-align: middle;
+      cursor: default;
+      padding: 0;
+      height: 36px;
+    }
+
+    .fw-matrix-cell--score {
+      background: var(--color-accent-subtle);
+    }
+
+    .fw-matrix-cell--selective {
+      background: var(--color-accent);
+    }
+
+    .fw-matrix-cell__dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: white;
+      margin: 0 auto;
+    }
+
+    .fw-matrix-cell--scale-neg.fw-matrix-cell--filled {
+      background: #DBEAFE;
+    }
+
+    .fw-matrix-cell--scale-pos.fw-matrix-cell--filled {
+      background: var(--color-accent-subtle);
+    }
+
+    /* Tab row with Import button */
+    .tabs-row {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--color-border);
+      margin-bottom: 24px;
+    }
+
+    .tabs-row .tabs {
+      flex: 1;
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .tabs-row__action {
+      flex-shrink: 0;
+      margin-left: 8px;
+    }
+
+    /* Full-page drag-drop overlay */
+    .member-dropzone {
+      position: fixed;
+      inset: 0;
+      background: rgba(37, 99, 235, 0.12);
+      border: 3px dashed var(--color-accent);
+      z-index: 900;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      pointer-events: none;
+    }
+
+    .member-dropzone--visible {
+      display: flex;
+      pointer-events: all;
+    }
+
+    .member-dropzone__label {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--color-accent);
+    }
+
+    .member-dropzone__sub {
+      font-size: 0.9rem;
+      color: var(--color-text-muted);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .member-field-row__header {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body data-page="crew-member">
+  <header class="app-header" id="app-header"></header>
+  <main class="app-main">
+    <div id="page-root"></div>
+  </main>
+  <footer class="app-footer" id="app-footer"></footer>
+  <div id="toast-container"></div>
+  <div class="modal-backdrop" id="template-modal"></div>
+  <input type="file" id="framework-import-input" accept=".json" multiple style="display:none">
+  <div class="member-dropzone" id="member-dropzone">
+    <div style="font-size:2.5rem">📥</div>
+    <div class="member-dropzone__label">Drop framework JSON here</div>
+    <div class="member-dropzone__sub">Only framework files will be imported</div>
+  </div>
+
+  <script src="validator.js"></script>
+  <script src="app.js"></script>
+  <script src="module-base.js"></script>
+  <script>
+    // ── State ──────────────────────────────────────────────────────────────────
+    let currentMode = 'create'; // create | view | edit
+    let currentMemberId = null;
+    let currentMember = null;
+    let memberNameDraft = '';
+    let customFields = []; // array of { id, name, type, value }
+
+    // ── Boot ──────────────────────────────────────────────────────────────────
+    function bootPage() {
+      if (!App.setup) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      const _validation = Validator.validateSetup(App.setup);
+      if (_validation.level === 1) {
+        window.location.href = 'index.html';
+        return;
+      }
+
+      App.setup.crewMembers   = App.setup.crewMembers   || [];
+      App.setup.frameworks    = App.setup.frameworks    || [];
+      App.setup.crewTemplates = App.setup.crewTemplates || []; // kept for migration
+
+      const params = new URLSearchParams(window.location.search);
+      const id   = params.get('id');
+      const edit = params.get('edit');
+
+      if (id) {
+        currentMemberId = id;
+        currentMember   = (App.setup.crewMembers || []).find(m => m.id === id);
+        if (!currentMember) {
+          Toast.show('Crew member not found.', 'error');
+          setTimeout(() => { window.location.href = 'index.html'; }, 1200);
+          return;
+        }
+
+        // Migrate old template-based member to new fields array format
+        migrateMember(currentMember);
+
+        currentMember.notes           = currentMember.notes           || [];
+        currentMember.changeLog       = currentMember.changeLog       || [];
+        currentMember.linkedFrameworks = currentMember.linkedFrameworks || [];
+        currentMode = edit ? 'edit' : 'view';
+      }
+
+      try {
+        renderPage();
+      } catch (err) {
+        console.error('renderPage error:', err);
+        document.getElementById('page-root').innerHTML =
+          `<p style="color:var(--color-danger);padding:32px">Error rendering page: ${err.message}</p>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(bootPage, 0);
+    });
+
+    // ── Migrate old template-based member to fields array ─────────────────────
+    function migrateMember(member) {
+      // Already new-style (fields is an array)
+      if (Array.isArray(member.fields)) return;
+
+      const template = (App.setup.crewTemplates || []).find(t => t.id === member.templateId);
+      const oldFields = (member.fields && typeof member.fields === 'object') ? member.fields : {};
+
+      if (template && Array.isArray(template.fields)) {
+        member.fields = template.fields.map(f => {
+          let type  = f.type;
+          let value = oldFields[f.id];
+
+          // Map old field types to new types
+          if (type === 'tags')      type = 'labels';
+          if (type === 'select')    type = 'text';
+          if (type === 'framework') type = 'text';
+
+          // Normalize values
+          if (type === 'labels') {
+            value = Array.isArray(value) ? value : (value ? [value] : []);
+          } else {
+            value = Array.isArray(value) ? value.join(', ') : (value || '');
+          }
+
+          return { id: f.id, name: f.name, type, value };
+        });
+      } else {
+        // Template gone — preserve what we have as text fields
+        member.fields = Object.entries(oldFields).map(([fid, val]) => ({
+          id:    fid,
+          name:  fid,
+          type:  'text',
+          value: Array.isArray(val) ? val.join(', ') : String(val || '')
+        }));
+      }
+
+      delete member.templateId;
+      App.saveToStorage(App.setup);
+    }
+
+    // ── Main render ────────────────────────────────────────────────────────────
+    function renderPage() {
+      const root = document.getElementById('page-root');
+      root.innerHTML = '';
+
+      if (currentMode === 'create') {
+        customFields = [];
+        renderCreateMode(root);
+      } else if (currentMode === 'view') {
+        renderViewMode(root);
+      } else if (currentMode === 'edit') {
+        customFields = (currentMember.fields || []).map(f => Object.assign({}, f));
+        renderEditMode(root);
+      }
+    }
+
+    // ── CREATE MODE ────────────────────────────────────────────────────────────
+    function renderCreateMode(root) {
+      // Page header with back button
+      const pageHeader = document.createElement('div');
+      pageHeader.style.marginBottom = '24px';
+      pageHeader.innerHTML = `
+        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:16px">← Dashboard</a>
+        <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--color-text);line-height:1.2">New Crew Member</h1>
+      `;
+      root.appendChild(pageHeader);
+
+      const container = document.createElement('div');
+      container.className = 'container';
+      container.style.cssText = 'padding-top:0';
+
+      const formCard = document.createElement('div');
+      formCard.className = 'card';
+      formCard.style.cssText = 'margin-bottom:32px';
+
+      // Name input
+      const nameGroup = document.createElement('div');
+      nameGroup.className = 'form-group';
+      nameGroup.innerHTML = `
+        <label class="form-label">Crew Member Name *</label>
+        <input type="text" class="form-input" id="member-name-input" placeholder="e.g., John Doe">
+      `;
+      formCard.appendChild(nameGroup);
+      nameGroup.querySelector('#member-name-input').value = memberNameDraft;
+      nameGroup.querySelector('#member-name-input').addEventListener('input', e => {
+        memberNameDraft = e.target.value;
+        updateSaveButton();
+      });
+
+      // Fields section
+      const fieldsSectionEl = document.createElement('div');
+      fieldsSectionEl.style.marginTop = '32px';
+
+      const sectionHead = document.createElement('div');
+      sectionHead.style.cssText = 'margin-bottom:12px';
+
+      const sectionTitle = document.createElement('h2');
+      sectionTitle.style.cssText = 'font-size:1rem;font-weight:600;color:var(--color-text);margin:0';
+      sectionTitle.textContent = 'Fields';
+      sectionHead.appendChild(sectionTitle);
+
+      fieldsSectionEl.appendChild(sectionHead);
+
+      const fieldsList = document.createElement('div');
+      fieldsList.id = 'custom-fields-list';
+      renderCustomFieldRows(fieldsList);
+      fieldsSectionEl.appendChild(fieldsList);
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn--secondary btn--sm';
+      addBtn.textContent = '+ Add field';
+      addBtn.style.marginTop = '12px';
+      addBtn.addEventListener('click', () => {
+        customFields.push({ id: App.uuid(), name: '', type: 'text', value: '' });
+        renderCustomFieldRows(fieldsList);
+      });
+      fieldsSectionEl.appendChild(addBtn);
+
+      formCard.appendChild(fieldsSectionEl);
+      container.appendChild(formCard);
+      root.appendChild(container);
+
+      // Toolbar (bottom)
+      const toolbar = document.createElement('div');
+      toolbar.className = 'fb-toolbar';
+      toolbar.style.cssText = 'display:flex;justify-content:flex-end;gap:8px;margin-top:32px;margin-bottom:32px';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.id = 'save-member-btn';
+      saveBtn.className = 'btn btn--primary';
+      saveBtn.textContent = 'Save';
+      saveBtn.disabled = !memberNameDraft.trim();
+
+      saveBtn.addEventListener('click', () => {
+        const name = document.getElementById('member-name-input').value.trim();
+        if (!name) {
+          Toast.show('Please enter a member name', 'error');
+          return;
+        }
+
+        const member = {
+          id:              App.uuid(),
+          name,
+          fields:          customFields.map(f => Object.assign({}, f)),
+          linkedFrameworks: [],
+          notes:           [],
+          changeLog:       [],
+          createdAt:       new Date().toISOString(),
+          updatedAt:       new Date().toISOString()
+        };
+
+        App.setup.crewMembers.push(member);
+        if (!ModuleBase.safeSave(App.setup)) { App.setup.crewMembers.pop(); return; }
+
+        Toast.show('Crew member created', 'success');
+        window.location.href = `crew-member.html?id=${member.id}&from=crew`;
+      });
+
+      toolbar.appendChild(saveBtn);
+      root.appendChild(toolbar);
+    }
+
+    function updateSaveButton() {
+      const btn = document.getElementById('save-member-btn');
+      if (btn) {
+        const name = document.getElementById('member-name-input')?.value.trim();
+        btn.disabled = !name;
+      }
+    }
+
+    // ── Field row renderer for create/edit ──────────────────────────────────────
+    function renderCustomFieldRows(container) {
+      container.innerHTML = '';
+
+      if (customFields.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'text-align:center;padding:24px 16px;background:var(--color-surface-alt);border:1px dashed var(--color-border);border-radius:8px;color:var(--color-text-muted);font-size:.9rem';
+        empty.textContent = 'No fields yet. Click "+ Add field" to add one.';
+        container.appendChild(empty);
+        return;
+      }
+
+      customFields.forEach((field, idx) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:12px;background:var(--color-surface-alt);border:1px solid var(--color-border);border-radius:6px;padding:12px;';
+
+        // Field type select
+        const typeDiv = document.createElement('div');
+        typeDiv.style.cssText = 'flex:0 0 100px;';
+        const typeLabel = document.createElement('label');
+        typeLabel.className = 'form-label';
+        typeLabel.style.fontSize = '.7rem';
+        typeLabel.textContent = 'Type';
+        const typeSelect = document.createElement('select');
+        typeSelect.className = 'form-input';
+        typeSelect.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+        [
+          { value: 'text',   label: 'Text'   },
+          { value: 'date',   label: 'Date'   },
+          { value: 'labels', label: 'Labels' }
+        ].forEach(opt => {
+          const option = document.createElement('option');
+          option.value = opt.value;
+          option.textContent = opt.label;
+          if (field.type === opt.value) option.selected = true;
+          typeSelect.appendChild(option);
+        });
+        typeSelect.addEventListener('change', e => {
+          const newType = e.target.value;
+          // Convert value when type changes
+          if (newType === 'labels' && !Array.isArray(field.value)) {
+            field.value = field.value ? field.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+          } else if (newType !== 'labels' && Array.isArray(field.value)) {
+            field.value = field.value.join(', ');
+          }
+          field.type = newType;
+          renderCustomFieldRows(container);
+        });
+        typeDiv.appendChild(typeLabel);
+        typeDiv.appendChild(typeSelect);
+        row.appendChild(typeDiv);
+
+        // Field name input
+        const nameDiv = document.createElement('div');
+        nameDiv.style.cssText = 'flex:0 0 150px;';
+        const nameLabel = document.createElement('label');
+        nameLabel.className = 'form-label';
+        nameLabel.style.fontSize = '.7rem';
+        nameLabel.textContent = 'Name';
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'form-input';
+        nameInput.placeholder = 'Field name';
+        nameInput.value = field.name;
+        nameInput.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+        nameInput.addEventListener('input', e => { field.name = e.target.value; });
+        nameDiv.appendChild(nameLabel);
+        nameDiv.appendChild(nameInput);
+        row.appendChild(nameDiv);
+
+        // Value input wrapper
+        const valueWrapper = document.createElement('div');
+        valueWrapper.style.cssText = 'flex:1;';
+
+        if (field.type === 'labels') {
+          valueWrapper.appendChild(renderLabelsInputInline(field, container));
+        } else if (field.type === 'date') {
+          const valueLabel = document.createElement('label');
+          valueLabel.className = 'form-label';
+          valueLabel.style.fontSize = '.7rem';
+          valueLabel.textContent = 'Value';
+          const valueInput = document.createElement('input');
+          valueInput.type = 'date';
+          valueInput.className = 'form-input';
+          valueInput.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+          valueInput.value = field.value || '';
+          valueInput.addEventListener('change', e => { field.value = e.target.value; });
+          valueWrapper.appendChild(valueLabel);
+          valueWrapper.appendChild(valueInput);
+        } else {
+          const valueLabel = document.createElement('label');
+          valueLabel.className = 'form-label';
+          valueLabel.style.fontSize = '.7rem';
+          valueLabel.textContent = 'Value';
+          const valueInput = document.createElement('input');
+          valueInput.type = 'text';
+          valueInput.className = 'form-input';
+          valueInput.placeholder = 'Value';
+          valueInput.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+          valueInput.value = field.value || '';
+          valueInput.addEventListener('input', e => { field.value = e.target.value; });
+          valueWrapper.appendChild(valueLabel);
+          valueWrapper.appendChild(valueInput);
+        }
+
+        row.appendChild(valueWrapper);
+
+        // Action buttons (up, down, delete)
+        const ctrlDiv = document.createElement('div');
+        ctrlDiv.style.cssText = 'display:flex;gap:4px;flex-shrink:0;';
+
+        const upBtn = document.createElement('button');
+        upBtn.className = 'note-card__edit';
+        upBtn.textContent = '⬆️';
+        upBtn.title = 'Move up';
+        upBtn.type = 'button';
+        upBtn.disabled = idx === 0;
+        upBtn.addEventListener('click', () => {
+          if (idx > 0) {
+            [customFields[idx], customFields[idx - 1]] = [customFields[idx - 1], customFields[idx]];
+            renderCustomFieldRows(container);
+          }
+        });
+        ctrlDiv.appendChild(upBtn);
+
+        const downBtn = document.createElement('button');
+        downBtn.className = 'note-card__edit';
+        downBtn.textContent = '⬇️';
+        downBtn.title = 'Move down';
+        downBtn.type = 'button';
+        downBtn.disabled = idx === customFields.length - 1;
+        downBtn.addEventListener('click', () => {
+          if (idx < customFields.length - 1) {
+            [customFields[idx], customFields[idx + 1]] = [customFields[idx + 1], customFields[idx]];
+            renderCustomFieldRows(container);
+          }
+        });
+        ctrlDiv.appendChild(downBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'note-card__del';
+        delBtn.textContent = '🗑';
+        delBtn.title = 'Delete field';
+        delBtn.type = 'button';
+        delBtn.addEventListener('click', () => {
+          customFields.splice(idx, 1);
+          renderCustomFieldRows(container);
+        });
+        ctrlDiv.appendChild(delBtn);
+
+        row.appendChild(ctrlDiv);
+
+        // If field type is 'labels', append pills inside the row below all inputs
+        if (field.type === 'labels' && Array.isArray(field.value) && field.value.length > 0) {
+          const pillsContainer = document.createElement('div');
+          pillsContainer.className = 'pills-container';
+
+          field.value.forEach((tag, i) => {
+            const pill = document.createElement('span');
+            pill.className = 'tag-pill';
+            pill.innerHTML = `${Utils.esc(tag)}<span class="tag-pill-remove" title="Remove">×</span>`;
+            pill.querySelector('.tag-pill-remove').addEventListener('click', () => {
+              field.value.splice(i, 1);
+              renderCustomFieldRows(container);
+            });
+            pillsContainer.appendChild(pill);
+          });
+
+          row.appendChild(pillsContainer);
+        }
+
+        container.appendChild(row);
+      });
+    }
+
+    // ── Labels input widget ──────────────────────────────────────────────
+    function renderLabelsInputInline(field, container) {
+      if (!Array.isArray(field.value)) field.value = [];
+
+      const wrapper = document.createElement('div');
+      wrapper.style.cssText = 'width:100%;';
+
+      const lbl = document.createElement('label');
+      lbl.className = 'form-label';
+      lbl.style.fontSize = '.7rem';
+      lbl.textContent = 'Labels';
+      wrapper.appendChild(lbl);
+
+      const inputEl = document.createElement('input');
+      inputEl.type = 'text';
+      inputEl.className = 'form-input';
+      inputEl.style.cssText = 'width:100%;padding:6px 8px;font-size:.85rem;';
+      inputEl.placeholder = 'Type label and press Enter or comma to add';
+
+      const addLabel = (raw) => {
+        const tag = raw.trim();
+        if (tag && !field.value.includes(tag)) {
+          field.value.push(tag);
+          renderCustomFieldRows(container);
+        }
+      };
+
+      inputEl.addEventListener('keydown', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addLabel(inputEl.value);
+          inputEl.value = '';
+        } else if (e.key === ',') {
+          e.preventDefault();
+          addLabel(inputEl.value);
+          inputEl.value = '';
+        }
+      });
+
+      // Also add on blur (so typing then clicking Save still works)
+      inputEl.addEventListener('blur', () => {
+        if (inputEl.value.trim()) {
+          addLabel(inputEl.value);
+          inputEl.value = '';
+        }
+      });
+
+      wrapper.appendChild(inputEl);
+      return wrapper;
+    }
+
+    // ── Download ───────────────────────────────────────────────────────────────
+    function downloadMember() {
+      const data = Object.assign({ itemType: 'crewMember' }, currentMember);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `${currentMember.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_member.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      Toast.show(`"${currentMember.name}" downloaded.`, 'success');
+    }
+
+    // ── VIEW MODE ──────────────────────────────────────────────────────────────
+    function renderViewMode(root) {
+      const pageHeader = document.createElement('div');
+      pageHeader.style.marginBottom = '24px';
+
+      pageHeader.innerHTML = `
+        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:10px">← Dashboard</a>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
+          <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--color-text);line-height:1.2">${Utils.esc(currentMember.name)}</h1>
+          <div style="display:flex;gap:8px;flex-shrink:0;margin-top:4px">
+            <button class="btn btn--ghost btn--sm" id="view-download-btn">Download</button>
+            <a class="btn btn--primary btn--sm" href="crew-member.html?id=${currentMemberId}&edit=1&from=crew">Edit</a>
+          </div>
+        </div>
+      `;
+      root.appendChild(pageHeader);
+      pageHeader.querySelector('#view-download-btn').addEventListener('click', downloadMember);
+
+      const tabsRow = document.createElement('div');
+      tabsRow.className = 'tabs-row';
+
+      const tabsDiv = document.createElement('div');
+      tabsDiv.className = 'tabs';
+      tabsDiv.innerHTML = `
+        <button class="tab-btn tab-btn--active" data-tab="details">Details</button>
+        <button class="tab-btn" data-tab="notes">Notes</button>
+        <button class="tab-btn" data-tab="changelog">Change Log</button>
+      `;
+      tabsRow.appendChild(tabsDiv);
+      root.appendChild(tabsRow);
+
+      const detailsPanel = document.createElement('div');
+      detailsPanel.className = 'tab-panel tab-panel--active';
+      detailsPanel.setAttribute('data-tab', 'details');
+      renderDetailsTab(detailsPanel);
+      root.appendChild(detailsPanel);
+
+      const notesPanel = document.createElement('div');
+      notesPanel.className = 'tab-panel';
+      notesPanel.setAttribute('data-tab', 'notes');
+      renderNotesTab(notesPanel);
+      root.appendChild(notesPanel);
+
+      const changelogPanel = document.createElement('div');
+      changelogPanel.className = 'tab-panel';
+      changelogPanel.setAttribute('data-tab', 'changelog');
+      renderChangelogTab(changelogPanel);
+      root.appendChild(changelogPanel);
+
+      tabsDiv.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          tabsDiv.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
+          btn.classList.add('tab-btn--active');
+          root.querySelectorAll('.tab-panel').forEach(p => {
+            p.classList.toggle('tab-panel--active', p.dataset.tab === btn.dataset.tab);
+          });
+        });
+      });
+
+      setupFrameworkImport(root);
+    }
+
+    function renderDetailsTab(panel) {
+      panel.innerHTML = '';
+
+      const fields = currentMember.fields || [];
+      const card = document.createElement('div');
+      card.className = 'card';
+
+      if (fields.length === 0) {
+        const empty = document.createElement('div');
+        empty.style.cssText = 'padding:20px 0;color:var(--color-text-muted);font-size:.9rem';
+        empty.textContent = 'No fields added yet.';
+        card.appendChild(empty);
+      } else {
+        fields.forEach((field, idx) => {
+          const item = document.createElement('div');
+          item.style.cssText = `padding:14px 0;${idx > 0 ? 'border-top:1px solid var(--color-border);' : ''}${idx === 0 ? 'padding-top:0;' : ''}${idx === fields.length - 1 ? 'padding-bottom:0;' : ''}`;
+
+          const labelEl = document.createElement('div');
+          labelEl.style.cssText = 'font-size:.75rem;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px';
+          labelEl.textContent = field.name || 'Unnamed Field';
+          item.appendChild(labelEl);
+
+          const valueEl = document.createElement('div');
+          valueEl.style.cssText = 'font-size:.9375rem;color:var(--color-text)';
+
+          if (field.type === 'labels') {
+            const val = Array.isArray(field.value) ? field.value : [];
+            if (val.length > 0) {
+              const pillsDiv = document.createElement('div');
+              pillsDiv.className = 'tags-pills';
+              val.forEach(tag => {
+                const pill = document.createElement('span');
+                pill.className = 'tag-pill';
+                pill.textContent = tag;
+                pillsDiv.appendChild(pill);
+              });
+              valueEl.appendChild(pillsDiv);
+            } else {
+              valueEl.style.color = 'var(--color-text-muted)';
+              valueEl.textContent = '—';
+            }
+          } else if (field.type === 'date') {
+            if (field.value) {
+              valueEl.textContent = Utils.formatDate(field.value);
+            } else {
+              valueEl.style.color = 'var(--color-text-muted)';
+              valueEl.textContent = '—';
+            }
+          } else {
+            if (field.value) {
+              valueEl.textContent = field.value;
+            } else {
+              valueEl.style.color = 'var(--color-text-muted)';
+              valueEl.textContent = '—';
+            }
+          }
+
+          item.appendChild(valueEl);
+          card.appendChild(item);
+        });
+      }
+
+      panel.appendChild(card);
+
+      // Linked frameworks
+      const linked = currentMember.linkedFrameworks || [];
+      const fwSection = document.createElement('div');
+      fwSection.style.marginTop = '24px';
+
+      const fwHeading = document.createElement('div');
+      fwHeading.style.cssText = 'font-size:.75rem;font-weight:600;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px';
+      fwHeading.textContent = 'Frameworks';
+      fwSection.appendChild(fwHeading);
+
+      if (linked.length > 0) {
+        linked.forEach(fw => {
+          fwSection.appendChild(renderFrameworkAccordion(fw, panel));
+        });
+      }
+
+      // Import button at bottom
+      const importBtn = document.createElement('button');
+      importBtn.className = 'btn btn--secondary btn--sm';
+      importBtn.textContent = 'Import';
+      importBtn.style.marginTop = linked.length > 0 ? '12px' : '0';
+      importBtn.addEventListener('click', () => {
+        document.getElementById('framework-import-input').click();
+      });
+      fwSection.appendChild(importBtn);
+
+      panel.appendChild(fwSection);
+    }
+
+    function renderFrameworkAccordion(fw, panel) {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'fw-accordion';
+
+      const header = document.createElement('button');
+      header.className = 'fw-accordion__header';
+      header.type = 'button';
+      header.innerHTML = `
+        <span class="fw-accordion__chevron">▶</span>
+        <span class="fw-accordion__title">${Utils.esc(fw.name || 'Unnamed Framework')}</span>
+        <span class="fw-accordion__actions">
+          <button type="button" class="note-card__edit fw-dl-btn" title="Download">📥</button>
+          <button type="button" class="note-card__del fw-del-btn" title="Delete">🗑</button>
+        </span>
+      `;
+
+      const body = document.createElement('div');
+      body.className = 'fw-accordion__body';
+      body.appendChild(buildFrameworkMatrixView(fw));
+
+      // Toggle
+      header.addEventListener('click', (e) => {
+        if (e.target.closest('.fw-accordion__actions')) return;
+        wrapper.classList.toggle('fw-accordion--open');
+      });
+
+      // Download
+      header.querySelector('.fw-dl-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const blob = new Blob([JSON.stringify(fw, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${(fw.name || 'framework').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_framework.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        Toast.show(`"${fw.name}" downloaded.`, 'success');
+      });
+
+      // Delete
+      header.querySelector('.fw-del-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        currentMember.linkedFrameworks = currentMember.linkedFrameworks.filter(f => f.id !== fw.id);
+        currentMember.updatedAt = new Date().toISOString();
+        App.saveToStorage(App.setup);
+        const detailsPanel = document.querySelector('#page-root .tab-panel[data-tab="details"]');
+        if (detailsPanel) renderDetailsTab(detailsPanel);
+        Toast.show(`"${fw.name}" removed.`, 'success');
+      });
+
+      wrapper.appendChild(header);
+      wrapper.appendChild(body);
+
+      return wrapper;
+    }
+
+    function buildFrameworkMatrixView(fw) {
+      const wrap = document.createElement('div');
+      wrap.style.overflowX = 'auto';
+
+      const cols   = fw.columns || [];
+      const groups = fw.groups  || [];
+      const type   = fw.type    || 'selective';
+
+      // Fallback: no recognised structure — show compact JSON
+      if (!cols.length && !groups.length) {
+        const pre = document.createElement('pre');
+        pre.style.cssText = 'font-size:.8rem;overflow:auto;color:var(--color-text-muted);margin:0';
+        const display = Object.assign({}, fw);
+        delete display.itemType;
+        pre.textContent = JSON.stringify(display, null, 2);
+        wrap.appendChild(pre);
+        return wrap;
+      }
+
+      const isScale    = type === 'scale';
+      const isScore    = type === 'score';
+      const isSelectiv = type === 'selective';
+
+      let _descIdCounter = 0;
+      let html = `<table class="fw-matrix-table"><thead><tr>`;
+
+      // Label column header
+      html += `<th class="fw-th-label"><div class="fw-col-head" style="text-align:left"></div></th>`;
+
+      // Data column headers
+      cols.forEach(col => {
+        html += `<th><div class="fw-col-head">${Utils.esc(col.label || '')}</div></th>`;
+      });
+
+      // Right pole header for scale type
+      if (isScale) {
+        html += `<th class="fw-th-right-pole"><div class="fw-col-head"></div></th>`;
+      }
+
+      html += `</tr></thead><tbody>`;
+
+      groups.forEach(group => {
+        // Group header row (only if label exists)
+        if (group.label && group.label.trim()) {
+          const colspan = cols.length + 1 + (isScale ? 1 : 0);
+          html += `<tr class="fw-group-row"><td colspan="${colspan}">${Utils.esc(group.label)}</td></tr>`;
+        }
+
+        const rows = group.rows || [];
+        rows.forEach(row => {
+          html += `<tr class="fw-skill-row">`;
+
+          // Label cell
+          html += `<td class="fw-label-cell">`;
+          html += `<span class="fw-label-name">${Utils.esc(row.label || '')}</span>`;
+          if (row.description && row.description.trim()) {
+            const descId = `fw-desc-${fw.id || 'x'}-${_descIdCounter++}`;
+            html += `<button class="fw-desc-toggle" onclick="(function(btn){var el=document.getElementById('${descId}');if(!el)return;var exp=el.classList.toggle('expanded');btn.textContent=exp?'Hide description':'Show description';})(this)">Show description</button>`;
+            html += `<span class="fw-label-desc" id="${descId}">${Utils.esc(row.description)}</span>`;
+          }
+          html += `</td>`;
+
+          // Data cells
+          if (isScore) {
+            const selectedIdx = _getScoreIdx(row, cols);
+            cols.forEach((col, ci) => {
+              const filled = selectedIdx !== null && ci <= selectedIdx;
+              html += `<td class="fw-matrix-cell ${filled ? 'fw-matrix-cell--score' : ''}"></td>`;
+            });
+          } else if (isScale) {
+            cols.forEach(col => {
+              const colVal = parseInt(col.label);
+              const rowVal = row.values?.['__scale'] ?? null;
+              const isNeg  = colVal < 0, isPos = colVal > 0;
+              const filled = rowVal !== null && (
+                isNeg ? colVal >= rowVal && rowVal < 0 :
+                isPos ? colVal <= rowVal && rowVal > 0 : false
+              );
+              const side = isNeg ? 'fw-matrix-cell--scale-neg' : 'fw-matrix-cell--scale-pos';
+              html += `<td class="fw-matrix-cell ${side} ${filled ? 'fw-matrix-cell--filled' : ''}"></td>`;
+            });
+            // Right pole cell
+            html += `<td class="fw-label-cell fw-right-pole-cell"><span class="fw-label-name">${Utils.esc(row.poleRight || '')}</span></td>`;
+          } else {
+            // Selective
+            cols.forEach(col => {
+              const filled = row.values?.[col.id] === true;
+              html += `<td class="fw-matrix-cell ${filled ? 'fw-matrix-cell--selective' : ''}">`;
+              if (filled) html += `<div class="fw-matrix-cell__dot"></div>`;
+              html += `</td>`;
+            });
+          }
+
+          html += `</tr>`;
+        });
+      });
+
+      html += `</tbody></table>`;
+      wrap.innerHTML = html;
+      return wrap;
+    }
+
+    function _getScoreIdx(row, cols) {
+      let idx = null;
+      cols.forEach((col, ci) => {
+        if (row.values?.[col.id] === true) idx = ci;
+      });
+      if (idx === null && row.values?.['__score'] !== undefined) {
+        idx = row.values['__score'];
+      }
+      return idx;
+    }
+
+    function renderNotesTab(panel) {
+      panel.innerHTML = '';
+      const form = document.createElement('div');
+      form.style.cssText = 'margin-bottom:32px;padding:16px;background:#ffffff;border-radius:8px;border:1px solid var(--color-border)';
+
+      form.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input type="text" class="form-input" id="note-title" placeholder="Note title (optional)">
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" id="note-date">
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label class="form-label">Note *</label>
+          <textarea class="form-input" id="note-text" placeholder="Write your note…" rows="4" style="resize:none;overflow-y:auto"></textarea>
+        </div>
+      `;
+
+      const addBtnRow = document.createElement('div');
+      addBtnRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:12px';
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn--primary';
+      addBtn.textContent = 'Add note';
+      addBtnRow.appendChild(addBtn);
+
+      addBtn.addEventListener('click', () => {
+        const title = form.querySelector('#note-title').value.trim();
+        const date  = form.querySelector('#note-date').value || new Date().toISOString().slice(0, 10);
+        const text  = form.querySelector('#note-text').value.trim();
+
+        if (!text) {
+          Toast.show('Note text is required', 'error');
+          return;
+        }
+
+        const note = {
+          id: App.uuid(),
+          title,
+          date,
+          text,
+          createdAt: new Date().toISOString()
+        };
+
+        currentMember.notes.push(note);
+        currentMember.updatedAt = new Date().toISOString();
+        App.saveToStorage(App.setup);
+
+        form.querySelector('#note-title').value = '';
+        form.querySelector('#note-date').value = today;
+        form.querySelector('#note-text').value = '';
+
+        renderNotesTab(panel);
+        Toast.show('Note added', 'success');
+      });
+
+      form.appendChild(addBtnRow);
+
+      const today = new Date().toISOString().slice(0, 10);
+      form.querySelector('#note-date').value = today;
+
+      panel.appendChild(form);
+
+      if (currentMember.notes.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.innerHTML = `
+          <div class="empty-state__icon">📝</div>
+          <div class="empty-state__title">No notes yet</div>
+          <p>Add a note to document important information about this crew member.</p>
+        `;
+        panel.appendChild(empty);
+      } else {
+        const list = document.createElement('div');
+        list.className = 'notes-list';
+
+        const sorted = [...currentMember.notes].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        sorted.forEach(note => {
+          const card = document.createElement('div');
+          card.className = 'note-card';
+
+          function setOtherCardsDisabled(disabled) {
+            list.querySelectorAll('.note-card__edit, .note-card__del').forEach(btn => {
+              if (!card.contains(btn)) btn.disabled = disabled;
+            });
+          }
+
+          function renderCardView() {
+            card.classList.remove('note-card--editing');
+            card.innerHTML = '';
+
+            const header = document.createElement('div');
+            header.className = 'note-card__header';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'note-card__title';
+            titleEl.textContent = note.title || Utils.formatDate(note.date);
+            header.appendChild(titleEl);
+
+            const meta = document.createElement('div');
+            meta.className = 'note-card__meta';
+
+            const dateDiv = document.createElement('div');
+            dateDiv.className = 'note-card__date';
+            dateDiv.textContent = Utils.formatDate(note.date);
+            meta.appendChild(dateDiv);
+
+            const editBtn = document.createElement('button');
+            editBtn.className = 'note-card__edit';
+            editBtn.textContent = '✏️';
+            editBtn.title = 'Edit note';
+            editBtn.type = 'button';
+            editBtn.addEventListener('click', () => renderCardEdit());
+            meta.appendChild(editBtn);
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'note-card__del';
+            delBtn.textContent = '🗑';
+            delBtn.title = 'Delete note';
+            delBtn.type = 'button';
+            delBtn.addEventListener('click', () => {
+              currentMember.notes = currentMember.notes.filter(n => n.id !== note.id);
+              currentMember.updatedAt = new Date().toISOString();
+              App.saveToStorage(App.setup);
+              renderNotesTab(panel);
+            });
+            meta.appendChild(delBtn);
+
+            header.appendChild(meta);
+            card.appendChild(header);
+
+            const textEl = document.createElement('div');
+            textEl.className = 'note-card__text';
+            textEl.textContent = note.text;
+            card.appendChild(textEl);
+          }
+
+          function renderCardEdit() {
+            card.classList.add('note-card--editing');
+            card.innerHTML = '';
+
+            if (form) form.classList.add('notes-add-form--disabled');
+            setOtherCardsDisabled(true);
+
+            card.innerHTML = `
+              <div class="form-group">
+                <label class="form-label">Title</label>
+                <input type="text" class="form-input note-edit-title" value="${Utils.esc(note.title)}" placeholder="Note title">
+              </div>
+              <div class="form-group" style="margin-top:10px">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-input note-edit-date" value="${Utils.esc(note.date)}">
+              </div>
+              <div class="form-group" style="margin-top:10px">
+                <label class="form-label">Note *</label>
+                <textarea class="form-input note-edit-text" rows="4" placeholder="Write your note…" style="resize:none;overflow-y:auto">${Utils.esc(note.text)}</textarea>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                <button class="btn btn--ghost note-edit-cancel" type="button">Cancel</button>
+                <button class="btn btn--primary note-edit-save" type="button">Save</button>
+              </div>
+            `;
+
+            function exitEdit() {
+              if (form) form.classList.remove('notes-add-form--disabled');
+              setOtherCardsDisabled(false);
+              renderCardView();
+            }
+
+            card.querySelector('.note-edit-cancel').addEventListener('click', exitEdit);
+
+            card.querySelector('.note-edit-save').addEventListener('click', () => {
+              const newText = card.querySelector('.note-edit-text').value.trim();
+              if (!newText) { Toast.show('Note text is required', 'error'); return; }
+              note.title = card.querySelector('.note-edit-title').value.trim();
+              note.date  = card.querySelector('.note-edit-date').value || note.date;
+              note.text  = newText;
+              currentMember.updatedAt = new Date().toISOString();
+              App.saveToStorage(App.setup);
+              exitEdit();
+              Toast.show('Note saved', 'success');
+            });
+          }
+
+          renderCardView();
+          list.appendChild(card);
+        });
+
+        panel.appendChild(list);
+      }
+    }
+
+    function renderChangelogTab(panel) {
+      panel.innerHTML = '';
+
+      const form = document.createElement('div');
+      form.style.cssText = 'margin-bottom:32px;padding:16px;background:#ffffff;border-radius:8px;border:1px solid var(--color-border)';
+
+      form.innerHTML = `
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" class="form-input" id="log-date">
+        </div>
+        <div class="form-group" style="margin-top: 12px;">
+          <label class="form-label">Entry *</label>
+          <textarea class="form-input" id="log-text" placeholder="Describe the change…" rows="3" style="resize:none;overflow-y:auto"></textarea>
+        </div>
+      `;
+
+      const today = new Date().toISOString().slice(0, 10);
+      form.querySelector('#log-date').value = today;
+
+      const addBtnRow = document.createElement('div');
+      addBtnRow.style.cssText = 'display:flex;justify-content:flex-end;margin-top:12px';
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn--primary';
+      addBtn.textContent = 'Add entry';
+      addBtn.type = 'button';
+      addBtnRow.appendChild(addBtn);
+
+      addBtn.addEventListener('click', () => {
+        const date = form.querySelector('#log-date').value || today;
+        const text = form.querySelector('#log-text').value.trim();
+
+        if (!text) {
+          Toast.show('Entry text is required', 'error');
+          return;
+        }
+
+        const entry = {
+          id: App.uuid(),
+          type: 'manual',
+          date,
+          note: text
+        };
+
+        currentMember.changeLog.push(entry);
+        currentMember.updatedAt = new Date().toISOString();
+        App.saveToStorage(App.setup);
+
+        form.querySelector('#log-text').value = '';
+        form.querySelector('#log-date').value = today;
+
+        renderChangelogTab(panel);
+        Toast.show('Entry added', 'success');
+      });
+
+      form.appendChild(addBtnRow);
+      panel.appendChild(form);
+
+      // Changelog list
+      if (currentMember.changeLog.length === 0) {
+        const empty = document.createElement('div');
+        empty.className = 'empty-state';
+        empty.innerHTML = `
+          <div class="empty-state__icon">📋</div>
+          <div class="empty-state__title">No change log entries yet</div>
+          <p>Manual entries will appear here.</p>
+        `;
+        panel.appendChild(empty);
+      } else {
+        const list = document.createElement('div');
+        list.className = 'changelog-list';
+
+        const sorted = [...currentMember.changeLog].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        sorted.forEach(entry => {
+          const card = document.createElement('div');
+          card.className = 'changelog-entry';
+
+          function setOtherCardsDisabled(disabled) {
+            list.querySelectorAll('.note-card__edit, .note-card__del').forEach(btn => {
+              if (!card.contains(btn)) btn.disabled = disabled;
+            });
+          }
+
+          function renderEntryView() {
+            card.classList.remove('changelog-entry--editing');
+            card.innerHTML = '';
+
+            const header = document.createElement('div');
+            header.className = 'changelog-entry__header';
+
+            const left = document.createElement('div');
+            left.className = 'changelog-entry__left';
+
+            const dateEl = document.createElement('span');
+            dateEl.className = 'changelog-entry__date';
+            dateEl.textContent = Utils.formatDate(entry.date);
+            left.appendChild(dateEl);
+
+            header.appendChild(left);
+
+            const meta = document.createElement('div');
+            meta.className = 'changelog-entry__meta';
+
+            if (entry.type === 'manual') {
+              const editBtn = document.createElement('button');
+              editBtn.className = 'note-card__edit';
+              editBtn.textContent = '✏️';
+              editBtn.title = 'Edit entry';
+              editBtn.type = 'button';
+              editBtn.addEventListener('click', () => renderEntryEdit());
+              meta.appendChild(editBtn);
+
+              const delBtn = document.createElement('button');
+              delBtn.className = 'note-card__del';
+              delBtn.textContent = '🗑';
+              delBtn.title = 'Delete entry';
+              delBtn.type = 'button';
+              delBtn.addEventListener('click', () => {
+                currentMember.changeLog = currentMember.changeLog.filter(e => e.id !== entry.id);
+                currentMember.updatedAt = new Date().toISOString();
+                App.saveToStorage(App.setup);
+                renderChangelogTab(panel);
+              });
+              meta.appendChild(delBtn);
+            }
+
+            header.appendChild(meta);
+            card.appendChild(header);
+
+            const content = document.createElement('div');
+            content.className = 'changelog-entry__text';
+            if (entry.type === 'auto') {
+              const fields = Array.isArray(currentMember.fields) ? currentMember.fields : [];
+              const field = fields.find(f => f.id === entry.field);
+              const fieldName = field?.name || entry.field || 'Unknown field';
+              content.innerHTML = `<strong>${Utils.esc(fieldName)}</strong> changed from <em>${Utils.esc(entry.before || '(empty)')}</em> → <em>${Utils.esc(entry.after || '(empty)')}</em>`;
+            } else {
+              content.textContent = entry.note;
+            }
+            card.appendChild(content);
+          }
+
+          function renderEntryEdit() {
+            card.classList.add('changelog-entry--editing');
+            card.innerHTML = '';
+
+            if (form) form.classList.add('notes-add-form--disabled');
+            setOtherCardsDisabled(true);
+
+            card.innerHTML = `
+              <div class="form-group">
+                <label class="form-label">Date</label>
+                <input type="date" class="form-input log-edit-date" value="${Utils.esc(entry.date)}">
+              </div>
+              <div class="form-group" style="margin-top:10px">
+                <label class="form-label">Entry *</label>
+                <textarea class="form-input log-edit-text" rows="3" placeholder="Describe the change…" style="resize:none;overflow-y:auto">${Utils.esc(entry.note)}</textarea>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+                <button class="btn btn--ghost log-edit-cancel" type="button">Cancel</button>
+                <button class="btn btn--primary log-edit-save" type="button">Save</button>
+              </div>
+            `;
+
+            function exitEdit() {
+              if (form) form.classList.remove('notes-add-form--disabled');
+              setOtherCardsDisabled(false);
+              renderEntryView();
+            }
+
+            card.querySelector('.log-edit-cancel').addEventListener('click', exitEdit);
+
+            card.querySelector('.log-edit-save').addEventListener('click', () => {
+              const newText = card.querySelector('.log-edit-text').value.trim();
+              if (!newText) { Toast.show('Entry text is required', 'error'); return; }
+              entry.date = card.querySelector('.log-edit-date').value || entry.date;
+              entry.note = newText;
+              currentMember.updatedAt = new Date().toISOString();
+              App.saveToStorage(App.setup);
+              exitEdit();
+              Toast.show('Entry saved', 'success');
+            });
+          }
+
+          renderEntryView();
+          list.appendChild(card);
+        });
+
+        panel.appendChild(list);
+      }
+    }
+
+    // ── FRAMEWORK IMPORT ───────────────────────────────────────────────────────
+    function isFrameworkData(data) {
+      if (!data || typeof data !== 'object') return false;
+      if (data.itemType === 'framework') return true;
+      const hasGroups = Array.isArray(data.groups) || Array.isArray(data.skillGroups) || Array.isArray(data.categories);
+      const isCrewMember = data.itemType === 'crewMember' || (data.fields && data.templateId);
+      return hasGroups && !isCrewMember;
+    }
+
+    async function importFrameworkFiles(files, detailsPanel) {
+      let imported = 0;
+      let failed = 0;
+
+      for (const file of files) {
+        try {
+          const text = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = e => resolve(e.target.result);
+            reader.onerror = () => reject(new Error('Read error'));
+            reader.readAsText(file);
+          });
+
+          const data = JSON.parse(text);
+
+          if (!isFrameworkData(data)) {
+            Toast.show(`"${file.name}" is not a framework file`, 'error', 3500);
+            failed++;
+            continue;
+          }
+
+          const existingIdx = currentMember.linkedFrameworks.findIndex(f => f.id && data.id && f.id === data.id);
+          if (existingIdx !== -1) {
+            const replace = await new Promise(resolve => {
+              const modal = document.getElementById('template-modal');
+              modal.className = 'modal-backdrop modal-backdrop--visible';
+              modal.innerHTML = '';
+              const modalContent = document.createElement('div');
+              modalContent.className = 'modal';
+              modalContent.innerHTML = `
+                <h2 class="modal__title">Framework Already Linked</h2>
+                <p class="modal__subtitle">"${Utils.esc(data.name || file.name)}" is already linked to this member. Do you want to replace it with the imported version?</p>
+                <div class="modal__actions">
+                  <button class="btn btn--ghost" id="fw-dup-cancel" type="button">Keep Current</button>
+                  <button class="btn btn--primary" id="fw-dup-replace" type="button">Replace</button>
+                </div>
+              `;
+              modal.appendChild(modalContent);
+              modal.querySelector('#fw-dup-cancel').addEventListener('click', () => {
+                modal.className = 'modal-backdrop';
+                modal.innerHTML = '';
+                resolve(false);
+              });
+              modal.querySelector('#fw-dup-replace').addEventListener('click', () => {
+                modal.className = 'modal-backdrop';
+                modal.innerHTML = '';
+                resolve(true);
+              });
+            });
+
+            if (replace) {
+              data.itemType = 'framework';
+              currentMember.linkedFrameworks[existingIdx] = data;
+              imported++;
+            } else {
+              failed++;
+            }
+            continue;
+          }
+
+          data.itemType = 'framework';
+          currentMember.linkedFrameworks.push(data);
+          imported++;
+        } catch (err) {
+          console.error('[CrewKit] Framework import error:', err);
+          Toast.show(`Failed to import "${file.name}": ${err.message}`, 'error', 3500);
+          failed++;
+        }
+      }
+
+      if (imported > 0) {
+        currentMember.updatedAt = new Date().toISOString();
+        App.saveToStorage(App.setup);
+        Toast.show(`${imported} framework${imported > 1 ? 's' : ''} imported`, 'success');
+        const dp = document.querySelector('#page-root .tab-panel[data-tab="details"]');
+        if (dp) renderDetailsTab(dp);
+      }
+    }
+
+    let _importListenersAttached = false;
+
+    function setupFrameworkImport(root) {
+      if (currentMode !== 'view') return;
+
+      const fileInput = document.getElementById('framework-import-input');
+      if (!fileInput) return;
+
+      const getDetailsPanel = () => document.querySelector('#page-root .tab-panel[data-tab="details"]');
+
+      if (_importListenersAttached) return;
+      _importListenersAttached = true;
+
+      fileInput.addEventListener('change', async () => {
+        const files = Array.from(fileInput.files);
+        if (!files.length) return;
+        await importFrameworkFiles(files, getDetailsPanel());
+        fileInput.value = '';
+      });
+
+      const dropzone = document.getElementById('member-dropzone');
+      if (!dropzone) return;
+
+      let dragDepth = 0;
+
+      document.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragDepth++;
+        if (dragDepth === 1) dropzone.classList.add('member-dropzone--visible');
+      });
+
+      document.addEventListener('dragleave', () => {
+        dragDepth--;
+        if (dragDepth === 0) dropzone.classList.remove('member-dropzone--visible');
+      });
+
+      document.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+
+      document.addEventListener('drop', async (e) => {
+        e.preventDefault();
+        dragDepth = 0;
+        dropzone.classList.remove('member-dropzone--visible');
+
+        const files = Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.json'));
+        if (!files.length) {
+          Toast.show('Only JSON files can be dropped here', 'error');
+          return;
+        }
+
+        await importFrameworkFiles(files, getDetailsPanel());
+      });
+    }
+
+    // ── EDIT MODE ──────────────────────────────────────────────────────────────
+    function renderEditMode(root) {
+      // Page header with back button
+      const pageHeader = document.createElement('div');
+      pageHeader.style.marginBottom = '24px';
+      pageHeader.innerHTML = `
+        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:16px">← Dashboard</a>
+        <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--color-text);line-height:1.2">Edit ${Utils.esc(currentMember.name)}</h1>
+      `;
+      root.appendChild(pageHeader);
+
+      const container = document.createElement('div');
+      container.className = 'container';
+      container.style.cssText = 'padding-top:0';
+
+      const formCard = document.createElement('div');
+      formCard.className = 'card';
+      formCard.style.cssText = 'margin-bottom:32px';
+
+      // Name input
+      const nameGroup = document.createElement('div');
+      nameGroup.className = 'form-group';
+      nameGroup.innerHTML = `
+        <label class="form-label">Crew Member Name</label>
+        <input type="text" class="form-input" id="member-name-input" value="${Utils.esc(currentMember.name)}">
+      `;
+      formCard.appendChild(nameGroup);
+
+      // Fields section
+      const fieldsSectionEl = document.createElement('div');
+      fieldsSectionEl.style.marginTop = '32px';
+
+      const sectionHead = document.createElement('div');
+      sectionHead.style.cssText = 'margin-bottom:12px';
+
+      const sectionTitle = document.createElement('h2');
+      sectionTitle.style.cssText = 'font-size:1rem;font-weight:600;color:var(--color-text);margin:0';
+      sectionTitle.textContent = 'Fields';
+      sectionHead.appendChild(sectionTitle);
+
+      fieldsSectionEl.appendChild(sectionHead);
+
+      const fieldsList = document.createElement('div');
+      fieldsList.id = 'custom-fields-list';
+      renderCustomFieldRows(fieldsList);
+      fieldsSectionEl.appendChild(fieldsList);
+
+      const addBtn = document.createElement('button');
+      addBtn.className = 'btn btn--secondary btn--sm';
+      addBtn.textContent = '+ Add field';
+      addBtn.style.marginTop = '12px';
+      addBtn.addEventListener('click', () => {
+        customFields.push({ id: App.uuid(), name: '', type: 'text', value: '' });
+        renderCustomFieldRows(fieldsList);
+      });
+      fieldsSectionEl.appendChild(addBtn);
+
+      formCard.appendChild(fieldsSectionEl);
+      container.appendChild(formCard);
+      root.appendChild(container);
+
+      // Toolbar (bottom) with cancel, delete and save buttons
+      const toolbar = document.createElement('div');
+      toolbar.className = 'fb-toolbar';
+      toolbar.style.cssText = 'display:flex;justify-content:space-between;gap:8px;margin-top:32px;margin-bottom:32px';
+
+      // Delete button
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'btn btn--danger';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.type = 'button';
+      deleteBtn.addEventListener('click', () => {
+        if (confirm(`Are you sure you want to delete "${currentMember.name}"? This action cannot be undone.`)) {
+          const idx = App.setup.crewMembers.findIndex(m => m.id === currentMemberId);
+          if (idx !== -1) {
+            App.setup.crewMembers.splice(idx, 1);
+            if (ModuleBase.safeSave(App.setup)) {
+              Toast.show('Crew member deleted', 'success');
+              window.location.href = 'index.html?from=crew';
+            }
+          }
+        }
+      });
+      toolbar.appendChild(deleteBtn);
+
+      // Save button on right
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn btn--primary';
+      saveBtn.textContent = 'Save';
+      saveBtn.type = 'button';
+      saveBtn.addEventListener('click', () => {
+        const name = document.getElementById('member-name-input').value.trim();
+        if (!name) {
+          Toast.show('Name is required', 'error');
+          return;
+        }
+
+        const _prevName   = currentMember.name;
+        const _prevFields = currentMember.fields;
+
+        currentMember.name      = name;
+        currentMember.fields    = customFields.map(f => Object.assign({}, f));
+        currentMember.updatedAt = new Date().toISOString();
+
+        if (!ModuleBase.safeSave(App.setup)) {
+          currentMember.name   = _prevName;
+          currentMember.fields = _prevFields;
+          return;
+        }
+
+        Toast.show('Changes saved', 'success');
+        window.location.href = `crew-member.html?id=${currentMemberId}&from=crew`;
+      });
+      toolbar.appendChild(saveBtn);
+
+      root.appendChild(toolbar);
+    }
+  </script>
+</body>
+</html>

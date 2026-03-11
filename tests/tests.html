@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CrewKit — Validator Tests</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 0; padding: 32px; background: #f4f4f8; color: #1a1a2e; }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    .summary { font-size: .95rem; color: #6b6b80; margin-bottom: 28px; }
+    .summary b { color: #1a1a2e; }
+    .suite { margin-bottom: 24px; }
+    .suite__name { font-weight: 700; font-size: 1rem; margin-bottom: 8px; padding-left: 4px; }
+    .test { padding: 8px 12px; margin: 4px 0; border-radius: 6px; font-size: .875rem; display: flex; gap: 10px; align-items: flex-start; }
+    .test--pass { background: #dcfce7; }
+    .test--fail { background: #fee2e2; }
+    .test__icon { flex-shrink: 0; font-weight: 700; }
+    .test--pass .test__icon { color: #16a34a; }
+    .test--fail .test__icon { color: #dc2626; }
+    .test__detail { color: #6b6b80; font-size: .8rem; margin-top: 2px; }
+    .final { font-size: 1.1rem; font-weight: 700; margin-top: 24px; padding: 16px 20px; border-radius: 8px; }
+    .final--pass { background: #dcfce7; color: #15803d; }
+    .final--fail { background: #fee2e2; color: #b91c1c; }
+  </style>
+</head>
+<body>
+  <h1>CrewKit — Validator Tests</h1>
+  <div class="summary" id="summary">Running…</div>
+  <div id="output"></div>
+  <div class="final" id="final"></div>
+
+  <script src="../validator.js"></script>
+  <script>
+  /* ── Minimal test harness ──────────────────────────────────────────────── */
+  const T = (() => {
+    let _passed = 0, _failed = 0;
+    const _suites = [];
+    let _current = null;
+
+    function suite(name) {
+      _current = { name, tests: [] };
+      _suites.push(_current);
+    }
+
+    function test(desc, fn) {
+      try {
+        fn();
+        _current.tests.push({ desc, pass: true });
+        _passed++;
+      } catch (err) {
+        _current.tests.push({ desc, pass: false, detail: err.message });
+        _failed++;
+      }
+    }
+
+    function assert(condition, msg) {
+      if (!condition) throw new Error(msg || 'Assertion failed');
+    }
+
+    function assertEqual(actual, expected, msg) {
+      if (actual !== expected) {
+        throw new Error((msg ? msg + ': ' : '') + `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+      }
+    }
+
+    function render() {
+      const out = document.getElementById('output');
+      _suites.forEach(s => {
+        const section = document.createElement('div');
+        section.className = 'suite';
+        const title = document.createElement('div');
+        title.className = 'suite__name';
+        title.textContent = s.name;
+        section.appendChild(title);
+        s.tests.forEach(t => {
+          const el = document.createElement('div');
+          el.className = `test test--${t.pass ? 'pass' : 'fail'}`;
+          el.innerHTML = `<span class="test__icon">${t.pass ? '✓' : '✗'}</span>
+            <div><div>${t.desc}</div>${t.detail ? `<div class="test__detail">${t.detail}</div>` : ''}</div>`;
+          section.appendChild(el);
+        });
+        out.appendChild(section);
+      });
+
+      const total = _passed + _failed;
+      document.getElementById('summary').innerHTML =
+        `<b>${total}</b> tests — <b>${_passed}</b> passed, <b>${_failed}</b> failed`;
+      const fin = document.getElementById('final');
+      fin.className = `final final--${_failed === 0 ? 'pass' : 'fail'}`;
+      fin.textContent = _failed === 0 ? `All ${_passed} tests passed ✓` : `${_failed} test${_failed > 1 ? 's' : ''} failed`;
+    }
+
+    return { suite, test, assert, assertEqual, render };
+  })();
+
+  /* ── Tests ─────────────────────────────────────────────────────────────── */
+
+  const VALID_MINIMAL = {
+    meta:    { version: '1.0', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
+    company: { name: 'Acme', theme: 'light' },
+    user:    { name: 'Alice' },
+  };
+
+  T.suite('Root shape');
+  T.test('null input → L1 error', () => {
+    const r = Validator.validateSetup(null);
+    T.assertEqual(r.valid, false);
+    T.assertEqual(r.level, 1);
+  });
+  T.test('string input → L1 error', () => {
+    const r = Validator.validateSetup('bad');
+    T.assertEqual(r.level, 1);
+  });
+  T.test('array input → L1 error', () => {
+    const r = Validator.validateSetup([]);
+    T.assertEqual(r.level, 1);
+  });
+
+  T.suite('Meta');
+  T.test('missing meta.version → L1 error', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    delete d.meta.version;
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 1);
+    T.assert(r.errors.some(e => e.field === 'meta.version'), 'error on meta.version');
+  });
+  T.test('missing meta.createdAt → L2 warning (not error)', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    delete d.meta.createdAt;
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 2);
+    T.assert(r.warnings.some(w => w.field === 'meta.createdAt'), 'warning on meta.createdAt');
+  });
+
+  T.suite('Company');
+  T.test('missing company.name → L1 error with correct field', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.company.name = '';
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 1);
+    T.assert(r.errors.some(e => e.field === 'company.name'), 'error on company.name');
+  });
+  T.test('unknown theme → L2 warning', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.company.theme = 'unknown-theme';
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 2);
+    T.assert(r.warnings.some(w => w.field === 'company.theme'), 'warning on company.theme');
+  });
+
+  T.suite('User');
+  T.test('missing user.name → L1 error', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.user.name = '   ';
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 1);
+    T.assert(r.errors.some(e => e.field === 'user.name'), 'error on user.name');
+  });
+
+  T.suite('Valid setup');
+  T.test('valid minimal setup → L0', () => {
+    const r = Validator.validateSetup(VALID_MINIMAL);
+    T.assertEqual(r.valid, true);
+    T.assertEqual(r.level, 0);
+  });
+
+  T.suite('Frameworks');
+  T.test('framework with empty id → L1 error', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.frameworks = [{ id: '', name: 'Test', type: 'score' }];
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 1);
+    T.assert(r.errors.some(e => e.field === 'frameworks[0].id'), 'error on frameworks[0].id');
+  });
+  T.test('framework with empty name → L1 error', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.frameworks = [{ id: 'fw-1', name: '', type: 'score' }];
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 1);
+    T.assert(r.errors.some(e => e.field === 'frameworks[0].name'), 'error on frameworks[0].name');
+  });
+
+  T.suite('Frameworks — nested validation (Phase 3)');
+  T.test('column with missing id → L2 warning', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.frameworks = [{ id: 'fw-1', name: 'Test', type: 'score', columns: [{ id: '', label: '1', description: '' }] }];
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 2);
+    T.assert(r.warnings.some(w => w.field === 'frameworks[0].columns[0].id'), 'warning on column.id');
+  });
+  T.test('group with missing id → L2 warning', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.frameworks = [{ id: 'fw-1', name: 'Test', type: 'score', groups: [{ id: '', label: '', rows: [] }] }];
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 2);
+    T.assert(r.warnings.some(w => w.field === 'frameworks[0].groups[0].id'), 'warning on group.id');
+  });
+  T.test('row with missing id → L2 warning', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.frameworks = [{
+      id: 'fw-1', name: 'Test', type: 'score',
+      groups: [{ id: 'g-1', label: '', rows: [{ id: '', label: 'Skill', description: '', values: {} }] }]
+    }];
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 2);
+    T.assert(r.warnings.some(w => w.field === 'frameworks[0].groups[0].rows[0].id'), 'warning on row.id');
+  });
+  T.test('valid framework with groups → L0', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.frameworks = [{
+      id: 'fw-1', name: 'Test', type: 'score',
+      columns: [{ id: 'c-1', label: '1', description: '' }],
+      groups: [{ id: 'g-1', label: '', rows: [{ id: 'r-1', label: 'Skill', description: '', values: {} }] }]
+    }];
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.valid, true);
+    T.assertEqual(r.level, 0);
+  });
+
+  T.suite('Team Members');
+  T.test('teamMember with empty id → L1 error', () => {
+    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
+    d.teamMembers = [{ id: '', name: 'Alice' }];
+    const r = Validator.validateSetup(d);
+    T.assertEqual(r.level, 1);
+    T.assert(r.errors.some(e => e.field === 'teamMembers[0].id'), 'error on teamMembers[0].id');
+  });
+
+  /* ── Render ────────────────────────────────────────────────────────────── */
+  T.render();
+  </script>
+</body>
+</html>
