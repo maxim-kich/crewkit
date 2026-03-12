@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CrewKit — local-first team leadership platform for collaborative assessment">
+  <meta name="theme-color" content="#274133">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CrewKit</title>
-  <link rel="stylesheet" href="typography-tokens.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="styles.css">
   <style>
     .tip-bar {
@@ -822,8 +826,8 @@
       width: 80px;
     }
     .matrix-table thead th.th-label-col {
-      min-width: 300px;
-      width: 300px;
+      min-width: 200px;
+      width: 200px;
       text-align: left;
       vertical-align: middle;
     }
@@ -886,8 +890,8 @@
       padding: 8px 10px;
       vertical-align: top;
       background: var(--color-surface);
-      width: 300px;
-      max-width: 300px;
+      width: 200px;
+      max-width: 200px;
     }
     .row-label__name {
       font-weight: 500; background: none; border: none;
@@ -901,7 +905,7 @@
       padding: 0; text-align: center; vertical-align: middle;
       cursor: pointer; transition: background .12s; user-select: none;
     }
-    .matrix-cell--filled-score     { background: var(--color-accent-subtle); }
+    .matrix-cell--filled-score     { background: var(--color-accent); }
     .matrix-cell--filled-selective { background: var(--color-accent); }
     .matrix-cell--readonly         { }
     .matrix-cell__dot {
@@ -909,8 +913,8 @@
       background: var(--color-accent); margin: 0 auto; display: none;
     }
     .matrix-cell--filled-selective .matrix-cell__dot { display: block; }
-    .matrix-cell--scale-neg.matrix-cell--filled-score { background: #DBEAFE; }
-    .matrix-cell--scale-pos.matrix-cell--filled-score { background: var(--color-accent-subtle); }
+    .matrix-cell--scale-neg.matrix-cell--filled-score { background: var(--color-accent); }
+    .matrix-cell--scale-pos.matrix-cell--filled-score { background: var(--color-accent); }
 
     .row-right-pole-cell {
       width: 200px;
@@ -2092,7 +2096,7 @@
         Toast.show(`"${copy.name}" created.`, 'success');
       },
 
-      _download(tab, id) {
+      async _download(tab, id) {
         const key  = tab === 'artifacts' ? 'artifacts' : 'crewMembers';
         const item = (App.setup[key] || []).find(i => i.id === id);
         if (!item) return;
@@ -2100,14 +2104,8 @@
         const suffix   = tab === 'artifacts' ? '_artifact' : '_member';
         const data = Object.assign({ itemType }, item);
         const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href     = url;
-        a.download = `${item.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}${suffix}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const filename = `${item.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}${suffix}.json`;
+        await App.downloadWithDialog(blob, filename);
         Toast.show(`"${item.name}" downloaded.`, 'success');
       },
 
@@ -2346,7 +2344,8 @@
           html += `<tr class="skill-row">`;
           html += `<td class="row-label-cell">`;
           html += `<div class="row-label__name" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0">${Utils.esc(row.label)}</div>`;
-          if (row.description && row.description.trim()) {
+          // Show description accordion only for score/selective, not for scale
+          if (!isScale && row.description && row.description.trim()) {
             const descId = `desc-${gi}-${ri}`;
             html += `<button class="row-desc-toggle" onclick="Pages.taskFiller.toggleDesc('${descId}', this)">Show description</button>
                      <span class="row-desc-text" id="${descId}">${Utils.esc(row.description)}</span>`;
@@ -2378,7 +2377,7 @@
 
           // Right pole cell (scale type only)
           if (isScale) {
-            html += `<td class="row-right-pole-cell">
+            html += `<td class="row-label-cell row-right-pole-cell">
               <div class="row-label__name" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0">${Utils.esc(row.poleRight || '')}</div>
             </td>`;
           }
@@ -2560,16 +2559,10 @@
       }
     },
 
-    downloadArtifact() {
+    async downloadArtifact() {
       const blob = new Blob([JSON.stringify(this.artifact, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${(this.artifact.name || 'artifact').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_filled.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const filename = `${(this.artifact.name || 'artifact').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_filled.json`;
+      await App.downloadWithDialog(blob, filename);
       Toast.show('✅ Artifact downloaded.', 'success');
 
       // Redirect to dashboard after download

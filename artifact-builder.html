@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CrewKit — local-first team leadership platform for collaborative assessment">
+  <meta name="theme-color" content="#274133">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Artifact — CrewKit</title>
-  <link rel="stylesheet" href="typography-tokens.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="styles.css">
   <style>
 
@@ -121,8 +125,8 @@
       width: 80px;
     }
     .matrix-table thead th.th-label-col {
-      min-width: 300px;
-      width: 300px;
+      min-width: 200px;
+      width: 200px;
       text-align: left;
       vertical-align: middle;
     }
@@ -198,8 +202,8 @@
       padding: 8px 10px;
       vertical-align: top;
       background: var(--color-surface);
-      width: 300px;
-      max-width: 300px;
+      width: 200px;
+      max-width: 200px;
     }
     .row-label__name {
       font-weight: 500; background: none; border: none;
@@ -1453,15 +1457,12 @@
 
           if (vm) {
             if (isScale) {
-              // Scale view mode: multi-line label with "Show more" if long
+              // Scale view mode: text wraps fully
               const labelId = `label-${gi}-${ri}`;
               const labelText = Utils.esc(row.label) || '';
-              html += `<div class="scale-label-text" id="${labelId}" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${labelText}</div>`;
-              // Only show "Show more" if text is likely to overflow (> ~60 chars as heuristic)
-              if (row.label && row.label.length > 60) {
-                html += `<button class="row-desc-toggle" onclick="FB.toggleScaleLabel('${labelId}', this)">Show more</button>`;
-              }
+              html += `<div class="scale-label-text" id="${labelId}" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0;white-space:normal;overflow:visible;line-height:1.4">${labelText}</div>`;
             } else {
+              // Score/Selective: show label and accordion for description
               html += `<div class="row-label__name" style="font-weight:500;font-size:.8375rem;color:var(--color-text);padding:2px 0">${Utils.esc(row.label) || ''}</div>`;
               if (row.description && row.description.trim()) {
                 const descId = `desc-${gi}-${ri}`;
@@ -1793,17 +1794,11 @@
       window.location.href = 'index.html?from=artifacts';
     },
 
-    downloadArtifact() {
+    async downloadArtifact() {
       const fw   = this.fw;
       const blob = new Blob([JSON.stringify(fw, null, 2)], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href = url;
-      a.download = `${(fw.name || 'artifact').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_artifact.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const filename = `${(fw.name || 'artifact').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_artifact.json`;
+      await App.downloadWithDialog(blob, filename);
       Toast.show(`"${fw.name}" downloaded.`, 'success');
     },
   };

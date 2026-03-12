@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="CrewKit — local-first team leadership platform for collaborative assessment">
+  <meta name="theme-color" content="#274133">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Crew Member - CrewKit</title>
-  <link rel="stylesheet" href="typography-tokens.css">
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
   <link rel="stylesheet" href="styles.css">
   <style>
     /* Modal (reused for framework duplicate confirm) */
@@ -1061,17 +1065,11 @@
     }
 
     // ── Download ───────────────────────────────────────────────────────────────
-    function downloadMember() {
+    async function downloadMember() {
       const data = Object.assign({ itemType: 'crewMember' }, currentMember);
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = `${currentMember.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_member.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const filename = `${currentMember.name.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_member.json`;
+      await App.downloadWithDialog(blob, filename);
       Toast.show(`"${currentMember.name}" downloaded.`, 'success');
     }
 
@@ -1257,17 +1255,11 @@
       });
 
       // Download
-      header.querySelector('.fw-dl-btn').addEventListener('click', (e) => {
+      header.querySelector('.fw-dl-btn').addEventListener('click', async (e) => {
         e.stopPropagation();
         const blob = new Blob([JSON.stringify(fw, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${(fw.name || 'framework').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_framework.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        const filename = `${(fw.name || 'framework').replace(/[^a-z0-9]/gi, '_').toLowerCase()}_framework.json`;
+        await App.downloadWithDialog(blob, filename);
         Toast.show(`"${fw.name}" downloaded.`, 'success');
       });
 

@@ -53,18 +53,12 @@ const App = {
   },
 
   /* ── Export setup.json ────────────────────────────────────────────────── */
-  exportSetup() {
+  async exportSetup() {
     if (!this.setup) { Toast.show('No setup loaded.', 'warning'); return; }
     const json = JSON.stringify(this.setup, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = `${this._safeFilename(this.setup.company?.name || 'setup')}-setup.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    const filename = `${this._safeFilename(this.setup.company?.name || 'setup')}-setup.json`;
+    await this.downloadWithDialog(blob, filename);
     this.markClean();
     Toast.show('setup.json downloaded.', 'success');
   },
@@ -320,18 +314,6 @@ const Utils = {
     });
   },
 
-  // Download arbitrary JSON
-  downloadJSON(data, filename) {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement('a');
-    a.href     = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  },
 
   // Render a prompt snippet card
   promptSnippet(label, text) {
@@ -465,6 +447,47 @@ function renderValidationBanners(result, container) {
       </div>`;
   }
 }
+
+/* ── App download utilities ────────────────────────────────────────────────────── */
+// Extend App object with download methods
+App.downloadWithDialog = async function(blob, suggestedFilename) {
+  // Try File System Access API (modern browsers)
+  if ('showSaveFilePicker' in window) {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: suggestedFilename,
+        types: [
+          {
+            description: 'JSON Files',
+            accept: { 'application/json': ['.json'] }
+          }
+        ]
+      });
+      const writable = await handle.createWritable();
+      await writable.write(blob);
+      await writable.close();
+      return;
+    } catch (err) {
+      // User cancelled or error occurred, fall through to default
+      if (err.name === 'AbortError') return;
+    }
+  }
+
+  // Fallback: traditional download (browser chooses location)
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = suggestedFilename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 100);
+};
+
+App.downloadJSON = async function(data, filename) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  await App.downloadWithDialog(blob, filename);
+};
 
 /* ── Boot ─────────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
