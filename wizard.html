@@ -160,7 +160,7 @@
         return ok;
       },
 
-      finish() {
+      async finish() {
         if (!this._validate()) return;
 
         const now     = new Date().toISOString();
@@ -196,7 +196,7 @@
         // Auto-download with custom filename
         const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         const filename = `${slug(company)}_${slug(user)}_crewkit-setup.json`;
-        Utils.downloadJSON(finalSetup, filename);
+        await App.downloadJSON(finalSetup, filename);
 
         Toast.show('✅ Changes saved.', 'success', 3000);
         setTimeout(() => { window.location.href = Wizard._editMode ? 'index.html' : 'index.html?new=1'; }, 800);
