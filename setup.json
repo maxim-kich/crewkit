@@ -1,0 +1,265 @@
+{
+  "meta": {
+    "version": "1.0",
+    "createdAt": "2026-06-29T09:00:00Z",
+    "updatedAt": "2026-06-29T09:00:00Z"
+  },
+  "company": {
+    "name": "Mews & Barks HQ",
+    "theme": "light"
+  },
+  "user": {
+    "name": "Meowxim"
+  },
+  "artifacts": [
+    {
+      "id": "treat-budget-matrix",
+      "name": "🧀 Treat Budget Matrix",
+      "description": "Score who deserves premium snacks, bonus belly rubs, and diplomatic cheese access.",
+      "model": "matrix",
+      "type": "score",
+      "scoreMax": 5,
+      "columns": [],
+      "groups": []
+    },
+    {
+      "id": "nap-readiness-scale",
+      "name": "😴 Nap Readiness Scale",
+      "description": "A highly scientific chart for measuring how fast each member can collapse into a sunbeam.",
+      "model": "matrix",
+      "type": "scale",
+      "scaleMax": 3,
+      "columns": [],
+      "groups": []
+    },
+    {
+      "id": "pack-vibes-checklist",
+      "name": "🌈 Pack Vibes Checklist",
+      "description": "Quick questionnaire to confirm the room is sufficiently chaotic, cozy, and full of purring.",
+      "model": "questionnaire",
+      "fields": []
+    },
+    {
+      "id": "chaos-response-matrix",
+      "name": "🐾 Chaos Response Matrix",
+      "description": "A dramatic framework for measuring velocity, flair, and whether the hallway was conquered at speed.",
+      "model": "matrix",
+      "type": "score",
+      "scoreMax": 5,
+      "columns": [
+        { "id": "col-1", "label": "1", "description": "Barely moving" },
+        { "id": "col-2", "label": "2", "description": "Suspiciously calm" },
+        { "id": "col-3", "label": "3", "description": "Purposeful trot" },
+        { "id": "col-4", "label": "4", "description": "Full zoom" },
+        { "id": "col-5", "label": "5", "description": "Legend status" }
+      ],
+      "groups": [
+        {
+          "id": "g-1",
+          "label": "Arrival energy",
+          "rows": [
+            { "id": "r-1", "label": "Enter room", "description": "Does the room know it has been entered?", "values": {} },
+            { "id": "r-2", "label": "Acknowledge humans", "description": "Optional but diplomatic.", "values": {} }
+          ]
+        },
+        {
+          "id": "g-2",
+          "label": "Operational speed",
+          "rows": [
+            { "id": "r-3", "label": "Cross carpet", "description": "Fast enough to blur the timeline.", "values": {} },
+            { "id": "r-4", "label": "Reach nap zone", "description": "Measured in seconds, not minutes.", "values": {} }
+          ]
+        }
+      ]
+    }
+  ],
+  "crewMembers": [
+    {
+      "id": "sir-whiskers",
+      "name": "Sir Whiskers",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Treat quality control" },
+        { "id": "mood", "name": "Mood", "type": "labels", "value": ["regal", "watchful"] }
+      ]
+    },
+    {
+      "id": "captain-barkley",
+      "name": "Captain Barkley",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Snack logistics" },
+        { "id": "nap-window", "name": "Nap Window", "type": "date", "value": "2026-06-29" }
+      ]
+    },
+    {
+      "id": "lady-mittens",
+      "name": "Lady Mittens",
+      "fields": [
+        { "id": "specialty", "name": "Specialty", "type": "text", "value": "Silent stair ambushes" }
+      ]
+    },
+    {
+      "id": "rover-mcfetch",
+      "name": "Rover McFetch",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Ball retrieval operations" },
+        { "id": "skills", "name": "Skills", "type": "labels", "value": ["fetch", "zoomies", "loyal"] }
+      ]
+    },
+    {
+      "id": "duchess-purr",
+      "name": "Duchess Purr",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Executive purring" }
+      ]
+    },
+    {
+      "id": "sir-snoot",
+      "name": "Sir Snoot",
+      "fields": [
+        { "id": "specialty", "name": "Specialty", "type": "text", "value": "Detecting snacks through closed doors" }
+      ]
+    },
+    {
+      "id": "queen-cuddles",
+      "name": "Queen Cuddles",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Thermal regulation" },
+        { "id": "status", "name": "Status", "type": "labels", "value": ["available", "snuggly"] }
+      ]
+    },
+    {
+      "id": "biscuit",
+      "name": "Biscuit",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Mood support" }
+      ]
+    },
+    {
+      "id": "lord-fluff",
+      "name": "Lord Fluff",
+      "fields": [
+        { "id": "skill", "name": "Skill", "type": "text", "value": "Looking expensive" }
+      ]
+    },
+    {
+      "id": "miss-zoomies",
+      "name": "Miss Zoomies",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Sprint department" },
+        { "id": "tempo", "name": "Tempo", "type": "labels", "value": ["fast", "faster", "gone"] }
+      ],
+      "linkedFrameworks": [
+        {
+          "itemType": "framework",
+          "id": "chaos-response-matrix",
+          "name": "🐾 Chaos Response Matrix",
+          "description": "A dramatic framework for measuring velocity, flair, and whether the hallway was conquered at speed.",
+          "type": "score",
+          "scoreMax": 5,
+          "columns": [
+            { "id": "col-1", "label": "1", "description": "Barely moving" },
+            { "id": "col-2", "label": "2", "description": "Suspiciously calm" },
+            { "id": "col-3", "label": "3", "description": "Purposeful trot" },
+            { "id": "col-4", "label": "4", "description": "Full zoom" },
+            { "id": "col-5", "label": "5", "description": "Legend status" }
+          ],
+          "groups": [
+            {
+              "id": "g-1",
+              "label": "Arrival energy",
+              "rows": [
+                { "id": "r-1", "label": "Enter room", "description": "Does the room know it has been entered?", "values": {} },
+                { "id": "r-2", "label": "Acknowledge humans", "description": "Optional but diplomatic.", "values": {} }
+              ]
+            },
+            {
+              "id": "g-2",
+              "label": "Operational speed",
+              "rows": [
+                { "id": "r-3", "label": "Cross carpet", "description": "Fast enough to blur the timeline.", "values": {} },
+                { "id": "r-4", "label": "Reach nap zone", "description": "Measured in seconds, not minutes.", "values": {} }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "toast",
+      "name": "Toast",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Warm loaf consultant" }
+      ]
+    },
+    {
+      "id": "general-paws",
+      "name": "General Paws",
+      "fields": [
+        { "id": "role", "name": "Role", "type": "text", "value": "Strategic paw-planning" },
+        { "id": "mission", "name": "Mission", "type": "labels", "value": ["coordination", "cuteness", "supremacy"] }
+      ]
+    }
+  ],
+  "initiatives": {
+    "columns": {
+      "todo": "To-do",
+      "doing": "In progress",
+      "done": "Victory lap"
+    },
+    "columnOrder": ["todo", "doing", "done"],
+    "todo": [
+      {
+        "id": "confirm-couch-policy",
+        "name": "Confirm all cats are allowed on the couch",
+        "deadline": "",
+        "description": "",
+        "updates": [],
+        "createdAt": "2026-06-29T09:00:00Z"
+      },
+      {
+        "id": "treat-ceasefire",
+        "name": "Negotiate snack ceasefire",
+        "deadline": "",
+        "description": "",
+        "updates": [],
+        "createdAt": "2026-06-29T09:00:00Z"
+      }
+    ],
+    "doing": [
+      {
+        "id": "nap-pile",
+        "name": "Build a shared nap pile",
+        "deadline": "",
+        "description": "",
+        "updates": [],
+        "createdAt": "2026-06-29T09:00:00Z"
+      },
+      {
+        "id": "kitchen-route",
+        "name": "Map the fastest route to the kitchen",
+        "deadline": "",
+        "description": "",
+        "updates": [],
+        "createdAt": "2026-06-29T09:00:00Z"
+      }
+    ],
+    "done": [
+      {
+        "id": "treat-protocol",
+        "name": "Establish emergency treat protocol",
+        "deadline": "",
+        "description": "",
+        "updates": [],
+        "createdAt": "2026-06-29T09:00:00Z"
+      },
+      {
+        "id": "toy-rota",
+        "name": "Certify the squeaky-toy rota",
+        "deadline": "",
+        "description": "",
+        "updates": [],
+        "createdAt": "2026-06-29T09:00:00Z"
+      }
+    ]
+  }
+}
