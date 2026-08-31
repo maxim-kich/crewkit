@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="crewkit-bg" x1="164" y1="112" x2="860" y2="912" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#42C07E"/>
+      <stop offset="0.5" stop-color="#48765E"/>
+      <stop offset="1" stop-color="#274033"/>
+    </linearGradient>
+    <linearGradient id="crewkit-folder" x1="214" y1="294" x2="812" y2="782" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111211"/>
+      <stop offset="1" stop-color="#202221"/>
+    </linearGradient>
+    <linearGradient id="crewkit-handle" x1="416" y1="590" x2="608" y2="626" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#CFDACD"/>
+      <stop offset="1" stop-color="#42C07E"/>
+    </linearGradient>
+  </defs>
+  <rect x="92" y="92" width="840" height="840" rx="190" fill="url(#crewkit-bg)"/>
+  <path d="M172 742V360C172 306 216 262 270 262H398C426 262 452 274 470 294L534 364H754C808 364 852 408 852 462V742C852 796 808 840 754 840H270C216 840 172 796 172 742Z" fill="url(#crewkit-folder)"/>
+  <path d="M150 474C143 437 172 404 210 404H814C852 404 881 437 874 474L818 756C810 797 774 826 732 826H292C250 826 214 797 206 756L150 474Z" fill="#202221"/>
+  <path d="M188 460H836" fill="none" stroke="#42C07E" stroke-width="22" stroke-linecap="round" opacity="0.72"/>
+  <rect x="342" y="548" width="340" height="122" rx="34" fill="#363936"/>
+  <rect x="416" y="590" width="192" height="36" rx="18" fill="url(#crewkit-handle)"/>
+</svg>

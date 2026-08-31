@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="CrewKit — local-first team leadership platform for collaborative assessment">
-  <meta name="theme-color" content="#274133">
+  <meta name="theme-color" content="#111211">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Artifact — CrewKit</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="favicon.ico">
-  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="assets/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
   <style>
 
@@ -833,6 +833,7 @@
     }
 
   </style>
+  <link rel="stylesheet" href="design-system.css">
 </head>
 <body data-page="artifact-builder">
 
@@ -842,12 +843,12 @@
 
     <!-- Edit mode / new artifact header -->
     <div class="page-header" id="page-header-edit">
-      <a href="#" id="back-btn-edit" class="page-header__back">← Dashboard</a>
+      <a href="#" id="back-btn-edit" class="page-header__back">Back to dashboard</a>
       <h1 class="page-header__title" id="page-title">New artifact</h1>
     </div>
     <!-- View mode header: Dashboard link + name + Edit button on same line -->
     <div id="page-header-view" style="display:none;margin-bottom:24px">
-      <a href="#" id="back-btn-view" class="page-header__back" style="display:inline-block;margin-bottom:10px">← Dashboard</a>
+      <a href="#" id="back-btn-view" class="page-header__back" style="display:inline-block;margin-bottom:10px">Back to dashboard</a>
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
         <div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -1386,8 +1387,10 @@
             </div>
           </th>`;
         } else {
-          // score + scale labels are readonly; selective labels editable
-          const readonlyAttr = (type === 'score' || type === 'scale') ? 'readonly style="opacity:.5;cursor:default;text-align:center"' : 'style="text-align:center"';
+          // Scale labels are readonly; score + selective labels remain editable.
+          const readonlyAttr = type === 'scale'
+            ? 'readonly style="opacity:.5;cursor:default;text-align:center"'
+            : 'style="text-align:center"';
           html += `<th style="position:relative">
             <div class="col-head" style="align-items:center;justify-content:center;text-align:center">
               <input class="col-head__label" type="text" value="${Utils.esc(col.label)}"
@@ -2202,7 +2205,6 @@
       const raw = App.loadFromStorage();
       if (!raw) { window.location.href = 'index.html'; return; }
       App.setup = raw;
-      App._applyTheme();
       App._renderHeader();
       App._renderFooter();
       FB.init();

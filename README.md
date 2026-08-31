@@ -1,3 +1,7 @@
+## Slop-Disclaimer
+
+It's a vibe coded experiment that helped me personally as a lead of 15 Designers to manage their data and prepare my exit from company, without clear process. Use it as you wish. There is no contribution expected.
+
 # CrewKit
 
 A local-first team evaluation tool. No server, no build step, no dependencies. All state lives in your browser's `localStorage`.
@@ -12,8 +16,6 @@ CrewKit is a local-first, open-source team evaluation platform built with vanill
 - **Track team members** — Manage profiles, skills, proficiency levels, and growth over time
 - **Share selectively** — Export individual artifacts, crew profiles, or your complete setup
 - **Stay in control** — All data lives in your browser. No backend, no accounts, no data leaving your machine
-
-Learn more about the philosophy and workflow in the built-in help section (`how-it-works.html`).
 
 ---
 
@@ -43,7 +45,9 @@ crewkit/
 ├── app.js                   # Core: storage, router, toast, modal, utilities
 ├── validator.js             # Setup JSON validation (returns { valid, level, errors, warnings })
 ├── module-base.js           # Shared module utilities: safeSave(), confirmDelete()
-├── styles.css               # All styles — theme tokens + spacing tokens
+├── styles.css               # Structural base styles and spacing tokens
+├── design-system.css        # Dark interface tokens and shared components
+├── assets/                  # Local cursor assets
 │
 └── tests/
     └── tests.html           # Browser-runnable validator test suite (open directly)
@@ -78,16 +82,16 @@ The setup object stored in `localStorage` under the key `crewkit_setup`:
     "updatedAt": "ISO date"    // recommended
   },
   "company": {
-    "name": "string",          // required
-    "theme": "light|dark|system"  // optional
+    "name": "string"           // required
   },
   "user": {
     "name": "string"           // required
   },
-  "frameworks": [
+  "artifacts": [
     {
       "id": "uuid",            // required
       "name": "string",        // required
+      "model": "matrix|questionnaire",
       "type": "score|scale|selective",
       "scoreMax": 5,
       "scaleMax": 3,
@@ -104,12 +108,11 @@ The setup object stored in `localStorage` under the key `crewkit_setup`:
       ]
     }
   ],
-  "teamMembers": [
+  "crewMembers": [
     {
       "id": "uuid",
       "name": "string",
-      "templateId": "uuid",
-      "fields": {},
+      "fields": [],
       "linkedFrameworks": [],
       "notes": [],
       "changeLog": [],
@@ -117,17 +120,11 @@ The setup object stored in `localStorage` under the key `crewkit_setup`:
       "updatedAt": "ISO date"
     }
   ],
-  "teamTemplates": [
-    {
-      "id": "uuid",
-      "name": "string",
-      "fields": [{ "id": "uuid", "name": "string", "type": "text|date|select|tags|framework", "tracked": true }],
-      "createdAt": "ISO date",
-      "updatedAt": "ISO date"
-    }
-  ],
-  "tagPool": ["string"],
-  "hiring": []
+  "initiatives": {
+    "columns": { "todo": "To-do" },
+    "columnOrder": ["todo"],
+    "todo": []
+  }
 }
 ```
 
@@ -151,13 +148,7 @@ The setup object stored in `localStorage` under the key `crewkit_setup`:
 
 Open `tests/tests.html` directly in a browser. No server required.
 
-The harness loads `../validator.js` and runs ~20 assertions covering root shape, meta, company, user, framework structure, nested groups/rows/columns, and team members.
+The harness loads `../validator.js` and runs assertions covering root shape, meta, company, user, artifact structure, nested groups/rows/columns, crew members, and initiatives.
 
 ---
-
-## Theme system
-
-Set `data-theme` on `<html>` to one of: `light`, `dark`, `system`.
-
-Theme tokens (colors, shadows, radii) are defined per-theme in `styles.css` under `[data-theme="name"] { ... }`.
 

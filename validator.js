@@ -6,7 +6,6 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 const CURRENT_VERSION = '1.0';
-const KNOWN_THEMES    = ['light', 'dark', 'system'];
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ISO_RE  = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$/;
@@ -51,8 +50,6 @@ function validateSetup(data) {
   } else {
     if (!isString(data.company.name) || !data.company.name.trim())
       e('company.name is missing.', 'company.name');
-    if (data.company.theme && !KNOWN_THEMES.includes(data.company.theme))
-      w(`company.theme "${data.company.theme}" is not a known theme.`, 'company.theme');
   }
 
   // ── User ───────────────────────────────────────────────────────────────────

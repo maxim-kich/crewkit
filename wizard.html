@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="CrewKit — local-first team leadership platform for collaborative assessment">
-  <meta name="theme-color" content="#274133">
+  <meta name="theme-color" content="#111211">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Setup — CrewKit</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="favicon.ico">
-  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="assets/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
   <style>
     .wizard-shell {
@@ -54,6 +54,7 @@
       color: var(--color-error, #ef4444);
     }
   </style>
+  <link rel="stylesheet" href="design-system.css">
 </head>
 <body data-page="wizard">
 
@@ -74,9 +75,9 @@
         <div class="form-group">
           <label class="form-label" for="company-name">Company name <span>*</span></label>
           <div class="input-counter-wrap">
-            <input class="form-input" id="company-name" type="text" maxlength="12"
+            <input class="form-input" id="company-name" type="text" maxlength="80"
                    placeholder="e.g. YourCompany" autocomplete="off">
-            <span class="input-counter" id="company-name-count">0 / 12</span>
+            <span class="input-counter" id="company-name-count">0 / 80</span>
           </div>
           <div class="form-error" id="company-name-err" style="display:none;margin-top:4px"></div>
         </div>
@@ -86,15 +87,6 @@
           <input class="form-input" id="user-name" type="text" maxlength="80"
                  placeholder="e.g. Max Mustermann" autocomplete="off">
           <div class="form-error" id="user-name-err" style="display:none;margin-top:4px"></div>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="theme-select">Theme</label>
-          <select class="form-select" id="theme-select">
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-            <option value="system">System</option>
-          </select>
         </div>
 
         <div class="wizard-nav">
@@ -134,8 +126,8 @@
           companyErr.style.display = '';
           companyIn.classList.add('form-input--error');
           ok = false;
-        } else if (company.length > 12) {
-          companyErr.textContent = 'Maximum 12 characters.';
+        } else if (company.length > 80) {
+          companyErr.textContent = 'Maximum 80 characters.';
           companyErr.style.display = '';
           companyIn.classList.add('form-input--error');
           ok = false;
@@ -166,7 +158,6 @@
         const now     = new Date().toISOString();
         const company = document.getElementById('company-name').value.trim();
         const user    = document.getElementById('user-name').value.trim();
-        const theme   = document.getElementById('theme-select').value;
 
         const setup = {
           meta: {
@@ -174,7 +165,7 @@
             createdAt: now,
             updatedAt: now,
           },
-          company:     { name: company, theme },
+          company:     { name: company },
           user:        { name: user },
           artifacts:  [],
           crewMembers: [],
@@ -186,13 +177,11 @@
         };
 
         const finalSetup = Wizard._editMode && App.setup
-          ? { ...App.setup, company: { ...App.setup.company, name: company, theme }, user: { ...App.setup.user, name: user } }
+          ? { ...App.setup, company: { ...App.setup.company, name: company }, user: { ...App.setup.user, name: user } }
           : setup;
 
         App.saveToStorage(finalSetup);
         App.markClean();
-        App._applyTheme(theme);
-
         // Auto-download with custom filename
         const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
         const filename = `${slug(company)}_${slug(user)}_crewkit-setup.json`;
@@ -215,15 +204,13 @@
 
           const company = App.setup.company?.name || '';
           const user    = App.setup.user?.name    || '';
-          const theme   = App.setup.company?.theme || 'light';
 
           document.getElementById('company-name').value = company;
           document.getElementById('user-name').value    = user;
-          document.getElementById('theme-select').value = theme;
 
           // Update counter
           const count = document.getElementById('company-name-count');
-          if (count) count.textContent = `${company.length} / 12`;
+          if (count) count.textContent = `${company.length} / 80`;
         }
 
         // Char counter
@@ -232,15 +219,10 @@
         if (input && count) {
           input.addEventListener('input', () => {
             const len = input.value.length;
-            count.textContent = `${len} / 12`;
-            count.classList.toggle('input-counter--over', len > 12);
+            count.textContent = `${len} / 80`;
+            count.classList.toggle('input-counter--over', len > 80);
           });
         }
-
-        // Live theme preview
-        document.getElementById('theme-select')?.addEventListener('change', e => {
-          App._applyTheme(e.target.value);
-        });
       },
     };
   </script>

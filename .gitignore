@@ -23,6 +23,13 @@ yarn.lock
 .env.local
 .env.*.local
 
+# Local project artifacts
+renders/
+tools/
+USER_UPLOADS/
+graphify-out/
+AGENTS.md
+
 # wrangler files
 .wrangler
 .dev.vars*

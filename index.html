@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="CrewKit — local-first team leadership platform for collaborative assessment">
-  <meta name="theme-color" content="#274133">
+  <meta name="theme-color" content="#111211">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CrewKit</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="favicon.ico">
-  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="assets/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
   <style>
     .tip-bar {
@@ -142,12 +142,6 @@
       background: var(--color-border);
       margin: 4px 0;
     }
-    .dash-dropdown__caret {
-      font-size: .85rem;
-      margin-left: 4px;
-      opacity: .7;
-    }
-
     /* ── Tab panels ── */
     .dash-panel { display: none; }
     .dash-panel--active { display: block; }
@@ -943,6 +937,7 @@
     }
     .row-desc-text.show { display: block; }
   </style>
+  <link rel="stylesheet" href="design-system.css">
 </head>
 <body data-page="dashboard">
 
@@ -1147,22 +1142,22 @@
         }
 
         main.innerHTML = `
-          <div class="dashboard-hero" style="padding-bottom:24px">
-            <h1 class="dashboard-hero__title" style="color:var(--color-text)">
-              Welcome back, ${Utils.esc(setup.user?.name || 'there')}!
+          <div class="dashboard-hero">
+            <h1 class="dashboard-hero__title">
+              Welcome back, <span>${Utils.esc(setup.user?.name || 'there')}.</span>
             </h1>
           </div>
 
           <div class="dash-tabs-row">
             <div class="dash-tabs">
               <button class="dash-tab dash-tab--active" data-tab="artifacts" onclick="Pages.dashboard._switchTab('artifacts')">
-                Artifacts<span class="dash-tab__dot"></span>
+                Artifacts <span class="dash-tab__count">${String(artifacts.length).padStart(2, '0')}</span><span class="dash-tab__dot"></span>
               </button>
               <button class="dash-tab" data-tab="crew" onclick="Pages.dashboard._switchTab('crew')">
-                Crew<span class="dash-tab__dot"></span>
+                Crew <span class="dash-tab__count">${String(crewMembers.length).padStart(2, '0')}</span><span class="dash-tab__dot"></span>
               </button>
               <button class="dash-tab" data-tab="initiatives" onclick="Pages.dashboard._switchTab('initiatives')">
-                Initiatives<span class="dash-tab__dot"></span>
+                Initiatives <span class="dash-tab__count">${String(initiativesCount).padStart(2, '0')}</span><span class="dash-tab__dot"></span>
               </button>
             </div>
             <div class="dash-tab-actions" id="dash-tab-actions">
@@ -1170,7 +1165,7 @@
               <div class="dash-tab-divider"></div>
               <div class="dash-dropdown">
                 <button class="btn btn--primary btn--sm" onclick="Pages.dashboard._toggleDropdown()">
-                  New <span class="dash-dropdown__caret">▾</span>
+                  New <span class="dropdown-caret" aria-hidden="true">▾</span>
                 </button>
                 <div class="dash-dropdown__menu" id="dash-dropdown-menu">
                   <button class="dash-dropdown__item" onclick="Pages.dashboard._closeDropdown();Pages.dashboard._create('artifacts')">
@@ -1221,22 +1216,38 @@
 
         const newIds = this._newItems[tab] || new Set();
 
-        const cards = items.map(item => `
-          <div class="module-card${newIds.has(item.id) ? ' module-card--new' : ''}" data-id="${item.id}" style="cursor:pointer" onclick="Pages.dashboard._open('${tab}', '${item.id}')">
-            <div class="module-card__actions">
-              ${tab === 'artifacts' || tab === 'crew' ? `
-              <button class="module-card__action-btn" title="Duplicate" onclick="event.stopPropagation();Pages.dashboard._copy('${tab}','${item.id}')">📋</button>
-              <button class="module-card__action-btn" title="Download JSON" onclick="event.stopPropagation();Pages.dashboard._download('${tab}','${item.id}')">📥</button>
-              ` : ''}
-              <button class="module-card__action-btn" title="Edit" onclick="event.stopPropagation();Pages.dashboard._edit('${tab}','${item.id}')">✏️</button>
-              <button class="module-card__action-btn module-card__action-btn--danger" title="Delete" onclick="event.stopPropagation();Pages.dashboard._delete('${tab}','${item.id}','${Utils.esc(item.name)}')">🗑</button>
-            </div>
-            <div class="module-card__body">
-              <div class="module-card__title">${Utils.esc(item.name)}</div>
-              ${item.description ? `<div class="module-card__desc">${Utils.esc(item.description)}</div>` : ''}
-            </div>
-            ${tab === 'artifacts' ? (item.model === 'questionnaire' ? `<span class="module-card__label">Questionnaire</span>` : (item.type ? `<span class="module-card__label">${Utils.esc(item.type)}</span>` : '')) : (item.type ? `<span class="module-card__label">${Utils.esc(item.type)}</span>` : '')}
-          </div>`).join('');
+        const cards = items.map(item => {
+          const badge = tab === 'artifacts'
+            ? (item.model === 'questionnaire'
+                ? 'questionnaire'
+                : item.type
+                  ? `matrix · ${item.type}`
+                  : 'matrix')
+            : (item.type || 'crew member');
+          const description = item.description || (tab === 'artifacts'
+            ? (item.model === 'questionnaire' ? 'Questionnaire artifact' : 'Matrix artifact')
+            : 'Crew member profile');
+
+          return `
+            <div class="module-card${newIds.has(item.id) ? ' module-card--new' : ''}" data-id="${item.id}" onclick="Pages.dashboard._open('${tab}', '${item.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();Pages.dashboard._open('${tab}', '${item.id}')}" tabindex="0" role="button">
+              <div class="module-card__top">
+                <span class="module-card__label">${Utils.esc(badge)}</span>
+                <div class="module-card__actions">
+                  ${tab === 'artifacts' || tab === 'crew' ? `
+                  <button class="module-card__action-btn" aria-label="Duplicate ${Utils.esc(item.name)}" title="Duplicate" onclick="event.stopPropagation();Pages.dashboard._copy('${tab}','${item.id}')">📋</button>
+                  <button class="module-card__action-btn" aria-label="Download ${Utils.esc(item.name)} as JSON" title="Download JSON" onclick="event.stopPropagation();Pages.dashboard._download('${tab}','${item.id}')">📥</button>
+                  ` : ''}
+                  <button class="module-card__action-btn" aria-label="Edit ${Utils.esc(item.name)}" title="Edit" onclick="event.stopPropagation();Pages.dashboard._edit('${tab}','${item.id}')">✏️</button>
+                  <button class="module-card__action-btn module-card__action-btn--danger" aria-label="Delete ${Utils.esc(item.name)}" title="Delete" onclick="event.stopPropagation();Pages.dashboard._delete('${tab}','${item.id}','${Utils.esc(item.name)}')">🗑</button>
+                </div>
+              </div>
+              <div class="module-card__body">
+                <div class="module-card__title" title="${Utils.esc(item.name)}">${Utils.esc(item.name)}</div>
+                <div class="module-card__desc">${Utils.esc(description)}</div>
+              </div>
+              <span class="module-card__open">Open →</span>
+            </div>`;
+        }).join('');
 
         return `<div class="module-grid">${cards}</div>`;
       },
@@ -1263,7 +1274,7 @@
           html += `
             <div class="kanban-column" data-column="${col}">
               <div class="kanban-column__header">
-                <input type="text" class="kanban-column__title" value="${Utils.esc(columnLabel)}" data-column="${col}" onfocus="this.select()" onblur="Pages.dashboard._saveColumnName('${col}', this.value)" onkeydown="if(event.key==='Enter') this.blur()" onclick="this.removeAttribute('readonly')" readonly>
+                <input type="text" class="kanban-column__title" value="${Utils.esc(columnLabel)}" data-column="${col}" aria-label="Rename ${Utils.esc(columnLabel)} column" onfocus="this.select()" onblur="Pages.dashboard._saveColumnName('${col}', this.value);this.setAttribute('readonly','')" onkeydown="if(event.key==='Enter') this.blur()" onclick="this.removeAttribute('readonly')" readonly>
                 <button class="kanban-column__delete module-card__action-btn module-card__action-btn--danger" onclick="event.stopPropagation();Pages.dashboard._deleteColumn('${col}')" title="Delete column">🗑</button>
               </div>
               <div class="kanban-cards" data-column="${col}">
@@ -1557,11 +1568,11 @@
               ${(initiative.updates || []).map((update, idx) => {
                 const isEditing = isEditingUpdate && this._editingUpdateId?.updateIndex === idx;
                 return isEditing ? `
-                  <div class="initiative-add-update-card" style="background:var(--color-surface-alt);border:2px solid var(--color-accent)">
+                  <div class="initiative-add-update-card initiative-add-update-card--editing">
                     <textarea id="edit-update-text" class="initiative-add-update-card__textarea" placeholder="Update text...">${Utils.esc(update.text)}</textarea>
                     <input type="date" id="edit-update-date" class="initiative-add-update-card__date" value="${update.date || ''}">
                     <div style="display:flex;gap:8px">
-                      <button type="button" class="btn btn--secondary btn--sm" onclick="Pages.dashboard._cancelInitiativeUpdateEdit()">Cancel</button>
+                      <button type="button" class="btn btn--secondary btn--sm" onclick="Pages.dashboard._cancelInitiativeUpdateEdit('${initiative.id}', '${column}')">Cancel</button>
                       <button type="button" class="btn btn--primary btn--sm" onclick="Pages.dashboard._saveInitiativeUpdateEdit()">Save</button>
                     </div>
                   </div>
@@ -1619,6 +1630,7 @@
 
         modal.innerHTML = modalContent;
         backdrop.appendChild(modal);
+        Modal.bindOutsideDismiss(backdrop, () => backdrop.remove());
         document.body.appendChild(backdrop);
 
         // Store current editing initiative
@@ -1810,21 +1822,18 @@
         });
       },
 
-      _cancelInitiativeUpdateEdit() {
+      _cancelInitiativeUpdateEdit(id, column) {
         this._editingUpdateId = null;
 
-        // Re-render modal
         const backdrop = document.getElementById('initiative-modal-backdrop');
         if (backdrop) backdrop.remove();
 
         const setup = App.setup;
-        const initiatives = setup.initiatives || {};
-        const firstColumn = Object.keys(initiatives).find(col => Array.isArray(initiatives[col]) && initiatives[col].length > 0);
+        const initiative = (setup.initiatives?.[column] || []).find(item => item.id === id);
 
-        if (firstColumn) {
-          const initiative = initiatives[firstColumn][0];
+        if (initiative) {
           requestAnimationFrame(() => {
-            this._showInitiativeModal(initiative, firstColumn, 'view');
+            this._showInitiativeModal(initiative, column, 'view');
           });
         }
       },
@@ -2592,9 +2601,8 @@
       if (!main) return;
 
       main.innerHTML = `
-        <div class="dashboard-hero">
+        <div class="dashboard-hero dashboard-hero--fillout">
           <h1 class="dashboard-hero__title">Fill Artifacts</h1>
-          <p class="dashboard-hero__subtitle">Drop your artifact.json here to fill it out</p>
 
           <div class="dropzone" id="task-dropzone" onclick="document.getElementById('task-artifact-input').click()">
             <div class="dropzone__icon">📋</div>

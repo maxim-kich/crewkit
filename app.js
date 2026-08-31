@@ -15,7 +15,7 @@ const App = {
 
   /* ── Init ─────────────────────────────────────────────────────────────── */
   init() {
-    this._applyTheme();
+    document.documentElement.setAttribute('data-theme', 'dark');
     this._renderHeader();
     this._renderFooter();
     this.router.init();
@@ -26,13 +26,21 @@ const App = {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return null;
-      return JSON.parse(raw);
+      const data = JSON.parse(raw);
+      if (data?.company && Object.prototype.hasOwnProperty.call(data.company, 'theme')) {
+        delete data.company.theme;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+      return data;
     } catch {
       return null;
     }
   },
 
   saveToStorage(data) {
+    if (data?.company && Object.prototype.hasOwnProperty.call(data.company, 'theme')) {
+      delete data.company.theme;
+    }
     data.meta.updatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     this.setup   = data;
@@ -72,31 +80,6 @@ const App = {
     return s.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').slice(0, 20);
   },
 
-  /* ── Theme ────────────────────────────────────────────────────────────── */
-  _applyTheme(theme) {
-    const t = theme || this.setup?.company?.theme || 'light';
-    if (t === 'system') {
-      this._applySystemTheme();
-    } else {
-      document.documentElement.setAttribute('data-theme', t);
-      this._systemThemeWatcher?.removeEventListener('change', this._systemThemeHandler);
-    }
-  },
-
-  _applySystemTheme() {
-    const mq = window.matchMedia('(prefers-color-scheme: dark)');
-    document.documentElement.setAttribute('data-theme', mq.matches ? 'dark' : 'light');
-    // Watch for OS-level changes
-    if (this._systemThemeHandler) {
-      mq.removeEventListener('change', this._systemThemeHandler);
-    }
-    this._systemThemeHandler = e => {
-      document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
-    };
-    this._systemThemeWatcher = mq;
-    mq.addEventListener('change', this._systemThemeHandler);
-  },
-
   /* ── Header ───────────────────────────────────────────────────────────── */
   _renderHeader() {
     const header = document.getElementById('app-header');
@@ -104,22 +87,25 @@ const App = {
     const company = this.setup?.company?.name || '';
     header.innerHTML = `
       <div class="app-header__inner">
-        <a href="index.html" class="app-logo" style="text-decoration:none">
-          <span>CrewKit</span>
+        <div class="app-brand-line">
+          <a href="index.html" class="app-logo" aria-label="CrewKit dashboard" title="Go to dashboard"><span class="app-logo__ascii" aria-hidden="true"> ██████╗██████╗ ███████╗██╗    ██╗██╗  ██╗██╗████████╗
+██╔════╝██╔══██╗██╔════╝██║    ██║██║ ██╔╝██║╚══██╔══╝
+██║     ██████╔╝█████╗  ██║ █╗ ██║█████╔╝ ██║   ██║
+██║     ██╔══██╗██╔══╝  ██║███╗██║██╔═██╗ ██║   ██║
+╚██████╗██║  ██║███████╗╚███╔███╔╝██║  ██╗██║   ██║
+ ╚═════╝╚═╝  ╚═╝╚══════╝ ╚══╝╚══╝ ╚═╝  ╚═╝╚═╝   ╚═╝</span></a>
           ${company
-            ? `<span class="app-logo__sep">×</span>
+            ? `<span class="app-logo__sep">/</span>
                <span class="app-logo__company">${Utils.esc(company)}</span>`
             : ''}
-        </a>
+        </div>
 
         <nav class="app-nav">
           <a href="how-it-works.html" class="app-nav__link"><span>How it works</span></a>
           ${this.setup ? `
-          <div class="app-nav__divider"></div>
           <button class="btn btn--secondary btn--sm" onclick="App.startFillMode()">Fill out</button>
-          <div class="app-nav__divider"></div>
           <div style="position:relative">
-            <button class="btn btn--primary btn--sm" onclick="App._toggleSetupMenu(event)">setup.json ▾</button>
+            <button class="btn btn--secondary btn--sm" onclick="App._toggleSetupMenu(event)">setup.json <span class="dropdown-caret" aria-hidden="true">▾</span></button>
             <div id="setup-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);min-width:180px;z-index:999;overflow:hidden">
               <button class="setup-menu-item" onclick="App.exportSetup();App._closeSetupMenu()">Download</button>
               <button class="setup-menu-item" onclick="App._closeSetupMenu();document.getElementById('header-file-replace').click()">Replace</button>
@@ -182,11 +168,10 @@ const App = {
   _renderFooter() {
     const footer = document.getElementById('app-footer');
     if (!footer) return;
-    const year = new Date().getFullYear();
     footer.innerHTML = `
       <div class="app-footer__inner">
-        <span><span style="color:var(--color-text-muted);font-size:.75rem">v1.0</span>&nbsp;&nbsp;&nbsp;Created by <a href="https://maximkich.com" target="_blank" class="app-footer__link">Maxim Kich</a></span>
-        <a href="mailto:i.am@maximshevchenko.com" class="app-footer__link">Propose a change</a>
+        <span>crewkit v1.1</span>
+        <span>Created by <a href="https://maximkich.com" target="_blank" class="app-footer__link">Maxim Kich</a></span>
       </div>`;
   },
 
@@ -215,6 +200,12 @@ const Pages = {};
 
 /* ── Confirm Modal ────────────────────────────────────────────────────────── */
 const Modal = {
+  bindOutsideDismiss(backdrop, onDismiss) {
+    backdrop.addEventListener('click', event => {
+      if (event.target === backdrop) onDismiss();
+    });
+  },
+
   confirm({ title, body, confirmLabel = 'Delete', confirmClass = 'btn btn--danger', onConfirm }) {
     const backdrop = document.createElement('div');
     backdrop.className = 'modal-backdrop';
@@ -238,7 +229,7 @@ const Modal = {
     backdrop.getElementById = id => backdrop.querySelector('#' + id);
     backdrop.querySelector('#modal-cancel').onclick  = close;
     backdrop.querySelector('#modal-confirm').onclick = () => { close(); onConfirm(); };
-    backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+    this.bindOutsideDismiss(backdrop, close);
   },
 };
 
@@ -491,10 +482,9 @@ App.downloadJSON = async function(data, filename) {
 
 /* ── Boot ─────────────────────────────────────────────────────────────────── */
 document.addEventListener('DOMContentLoaded', () => {
+  document.documentElement.setAttribute('data-theme', 'dark');
   // Load setup from storage
   App.setup = App.loadFromStorage();
-  // Apply theme immediately
-  App._applyTheme();
   // Render shell
   App._renderHeader();
   App._renderFooter();

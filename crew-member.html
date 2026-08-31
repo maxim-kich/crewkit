@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="CrewKit — local-first team leadership platform for collaborative assessment">
-  <meta name="theme-color" content="#274133">
+  <meta name="theme-color" content="#111211">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Crew Member - CrewKit</title>
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="apple-touch-icon" href="favicon.ico">
-  <link rel="shortcut icon" href="favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="assets/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
   <link rel="stylesheet" href="styles.css">
   <style>
     /* Modal (reused for framework duplicate confirm) */
@@ -248,7 +248,7 @@
     }
 
     .note-card--editing {
-      background: #ffffff;
+      background: var(--color-surface);
     }
 
     .notes-add-form--disabled {
@@ -319,7 +319,7 @@
     }
 
     .changelog-entry--editing {
-      background: #ffffff;
+      background: var(--color-surface);
     }
 
     /* Empty states */
@@ -590,6 +590,7 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="design-system.css">
 </head>
 <body data-page="crew-member">
   <header class="app-header" id="app-header"></header>
@@ -732,7 +733,7 @@
       const pageHeader = document.createElement('div');
       pageHeader.style.marginBottom = '24px';
       pageHeader.innerHTML = `
-        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:16px">← Dashboard</a>
+        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:16px">Back to dashboard</a>
         <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--color-text);line-height:1.2">New Crew Member</h1>
       `;
       root.appendChild(pageHeader);
@@ -1081,7 +1082,7 @@
       pageHeader.style.marginBottom = '24px';
 
       pageHeader.innerHTML = `
-        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:10px">← Dashboard</a>
+        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:10px">Back to dashboard</a>
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px">
           <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--color-text);line-height:1.2">${Utils.esc(currentMember.name)}</h1>
           <div style="display:flex;gap:8px;flex-shrink:0;margin-top:4px">
@@ -1398,7 +1399,7 @@
     function renderNotesTab(panel) {
       panel.innerHTML = '';
       const form = document.createElement('div');
-      form.style.cssText = 'margin-bottom:32px;padding:16px;background:#ffffff;border-radius:8px;border:1px solid var(--color-border)';
+      form.style.cssText = 'margin-bottom:32px;padding:16px;background:var(--color-surface);border-radius:var(--radius-sm);border:1px solid var(--color-border)';
 
       form.innerHTML = `
         <div class="form-group">
@@ -1593,7 +1594,7 @@
       panel.innerHTML = '';
 
       const form = document.createElement('div');
-      form.style.cssText = 'margin-bottom:32px;padding:16px;background:#ffffff;border-radius:8px;border:1px solid var(--color-border)';
+      form.style.cssText = 'margin-bottom:32px;padding:16px;background:var(--color-surface);border-radius:var(--radius-sm);border:1px solid var(--color-border)';
 
       form.innerHTML = `
         <div class="form-group">
@@ -1829,16 +1830,14 @@
                 </div>
               `;
               modal.appendChild(modalContent);
-              modal.querySelector('#fw-dup-cancel').addEventListener('click', () => {
+              const closeDuplicateModal = result => {
                 modal.className = 'modal-backdrop';
                 modal.innerHTML = '';
-                resolve(false);
-              });
-              modal.querySelector('#fw-dup-replace').addEventListener('click', () => {
-                modal.className = 'modal-backdrop';
-                modal.innerHTML = '';
-                resolve(true);
-              });
+                resolve(result);
+              };
+              Modal.bindOutsideDismiss(modal, () => closeDuplicateModal(false));
+              modal.querySelector('#fw-dup-cancel').addEventListener('click', () => closeDuplicateModal(false));
+              modal.querySelector('#fw-dup-replace').addEventListener('click', () => closeDuplicateModal(true));
             });
 
             if (replace) {
@@ -1931,7 +1930,7 @@
       const pageHeader = document.createElement('div');
       pageHeader.style.marginBottom = '24px';
       pageHeader.innerHTML = `
-        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:16px">← Dashboard</a>
+        <a href="index.html?from=crew" class="page-header__back" style="display:inline-block;margin-bottom:16px">Back to dashboard</a>
         <h1 style="margin:0;font-size:1.75rem;font-weight:700;color:var(--color-text);line-height:1.2">Edit ${Utils.esc(currentMember.name)}</h1>
       `;
       root.appendChild(pageHeader);

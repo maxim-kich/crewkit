@@ -8,9 +8,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>CrewKit — Validator Tests</title>
-  <link rel="icon" type="image/x-icon" href="../favicon.ico">
-  <link rel="apple-touch-icon" href="../favicon.ico">
-  <link rel="shortcut icon" href="../favicon.ico">
+  <link rel="icon" type="image/svg+xml" href="../assets/favicon.svg">
+  <link rel="alternate icon" type="image/png" href="../assets/favicon-32x32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
   <style>
     body { font-family: system-ui, sans-serif; margin: 0; padding: 32px; background: #f4f4f8; color: #1a1a2e; }
     h1 { font-size: 1.4rem; margin-bottom: 4px; }
@@ -104,7 +104,7 @@
 
   const VALID_MINIMAL = {
     meta:    { version: '1.0', createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-    company: { name: 'Acme', theme: 'light' },
+    company: { name: 'Acme' },
     user:    { name: 'Alice' },
   };
 
@@ -147,14 +147,6 @@
     T.assertEqual(r.level, 1);
     T.assert(r.errors.some(e => e.field === 'company.name'), 'error on company.name');
   });
-  T.test('unknown theme → L2 warning', () => {
-    const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.company.theme = 'unknown-theme';
-    const r = Validator.validateSetup(d);
-    T.assertEqual(r.level, 2);
-    T.assert(r.warnings.some(w => w.field === 'company.theme'), 'warning on company.theme');
-  });
-
   T.suite('User');
   T.test('missing user.name → L1 error', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
@@ -171,50 +163,50 @@
     T.assertEqual(r.level, 0);
   });
 
-  T.suite('Frameworks');
-  T.test('framework with empty id → L1 error', () => {
+  T.suite('Artifacts');
+  T.test('artifact with empty id → L1 error', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.frameworks = [{ id: '', name: 'Test', type: 'score' }];
+    d.artifacts = [{ id: '', name: 'Test', type: 'score' }];
     const r = Validator.validateSetup(d);
     T.assertEqual(r.level, 1);
-    T.assert(r.errors.some(e => e.field === 'frameworks[0].id'), 'error on frameworks[0].id');
+    T.assert(r.errors.some(e => e.field === 'artifacts[0].id'), 'error on artifacts[0].id');
   });
-  T.test('framework with empty name → L1 error', () => {
+  T.test('artifact with empty name → L1 error', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.frameworks = [{ id: 'fw-1', name: '', type: 'score' }];
+    d.artifacts = [{ id: 'fw-1', name: '', type: 'score' }];
     const r = Validator.validateSetup(d);
     T.assertEqual(r.level, 1);
-    T.assert(r.errors.some(e => e.field === 'frameworks[0].name'), 'error on frameworks[0].name');
+    T.assert(r.errors.some(e => e.field === 'artifacts[0].name'), 'error on artifacts[0].name');
   });
 
-  T.suite('Frameworks — nested validation (Phase 3)');
+  T.suite('Artifacts — nested validation');
   T.test('column with missing id → L2 warning', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.frameworks = [{ id: 'fw-1', name: 'Test', type: 'score', columns: [{ id: '', label: '1', description: '' }] }];
+    d.artifacts = [{ id: 'fw-1', name: 'Test', type: 'score', columns: [{ id: '', label: '1', description: '' }] }];
     const r = Validator.validateSetup(d);
     T.assertEqual(r.level, 2);
-    T.assert(r.warnings.some(w => w.field === 'frameworks[0].columns[0].id'), 'warning on column.id');
+    T.assert(r.warnings.some(w => w.field === 'artifacts[0].columns[0].id'), 'warning on column.id');
   });
   T.test('group with missing id → L2 warning', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.frameworks = [{ id: 'fw-1', name: 'Test', type: 'score', groups: [{ id: '', label: '', rows: [] }] }];
+    d.artifacts = [{ id: 'fw-1', name: 'Test', type: 'score', groups: [{ id: '', label: '', rows: [] }] }];
     const r = Validator.validateSetup(d);
     T.assertEqual(r.level, 2);
-    T.assert(r.warnings.some(w => w.field === 'frameworks[0].groups[0].id'), 'warning on group.id');
+    T.assert(r.warnings.some(w => w.field === 'artifacts[0].groups[0].id'), 'warning on group.id');
   });
   T.test('row with missing id → L2 warning', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.frameworks = [{
+    d.artifacts = [{
       id: 'fw-1', name: 'Test', type: 'score',
       groups: [{ id: 'g-1', label: '', rows: [{ id: '', label: 'Skill', description: '', values: {} }] }]
     }];
     const r = Validator.validateSetup(d);
     T.assertEqual(r.level, 2);
-    T.assert(r.warnings.some(w => w.field === 'frameworks[0].groups[0].rows[0].id'), 'warning on row.id');
+    T.assert(r.warnings.some(w => w.field === 'artifacts[0].groups[0].rows[0].id'), 'warning on row.id');
   });
-  T.test('valid framework with groups → L0', () => {
+  T.test('valid artifact with groups → L0', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.frameworks = [{
+    d.artifacts = [{
       id: 'fw-1', name: 'Test', type: 'score',
       columns: [{ id: 'c-1', label: '1', description: '' }],
       groups: [{ id: 'g-1', label: '', rows: [{ id: 'r-1', label: 'Skill', description: '', values: {} }] }]
@@ -224,13 +216,13 @@
     T.assertEqual(r.level, 0);
   });
 
-  T.suite('Team Members');
-  T.test('teamMember with empty id → L1 error', () => {
+  T.suite('Crew Members');
+  T.test('crew member with empty id → L1 error', () => {
     const d = JSON.parse(JSON.stringify(VALID_MINIMAL));
-    d.teamMembers = [{ id: '', name: 'Alice' }];
+    d.crewMembers = [{ id: '', name: 'Alice' }];
     const r = Validator.validateSetup(d);
     T.assertEqual(r.level, 1);
-    T.assert(r.errors.some(e => e.field === 'teamMembers[0].id'), 'error on teamMembers[0].id');
+    T.assert(r.errors.some(e => e.field === 'crewMembers[0].id'), 'error on crewMembers[0].id');
   });
 
   /* ── Render ────────────────────────────────────────────────────────────── */
